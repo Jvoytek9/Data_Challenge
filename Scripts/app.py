@@ -739,8 +739,8 @@ def update_master_table_styles(x,y):
 
 @app.callback(
     [Output("comp1_2D_graph", "figure"),
-    Output("comp1_2D_table", "data"),
-    Output("comp1_2D_table", "columns")],
+     Output("comp1_2D_table", "data"),
+     Output("comp1_2D_table", "columns")],
     [Input("select-xaxis", "value"),
      Input("select-yaxis", "value"),
      Input('addComp', 'value'),
@@ -916,6 +916,7 @@ def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
 
             data.append(trace)
 
+    cleaned.dropna(subset=[selected_x, selected_y],axis="rows", inplace=True)
     cleaned = cleaned[[selected_x,selected_y]]
 
     return [{
@@ -1124,6 +1125,7 @@ def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
 
             data.append(trace)
 
+    cleaned.dropna(subset=[selected_x, selected_y],axis="rows", inplace=True)
     cleaned = cleaned[[selected_x,selected_y]]
 
     return [{
