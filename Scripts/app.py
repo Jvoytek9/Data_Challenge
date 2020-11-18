@@ -62,7 +62,7 @@ today = date.today()
 today = today.strftime("%m/%d/%Y")
 
 county_confirmed_cases=pd.read_csv('https://query.data.world/s/qcn2c577llw3aasduxurmcicaulkst')
-state_codes = pd.read_csv(r"C:\Users\Josh\OneDrive\Documents\Data Challenge\Scripts\data\states.csv")
+state_codes = pd.read_csv(r"C:\Users\Josh\OneDrive\Documents\Data_Challenge\Scripts\data\states.csv")
 dv=pd.read_csv('https://covidtracking.com/data/download/all-states-history.csv')
 
 dv = dv.drop('positiveScore', 1)
