@@ -66,7 +66,7 @@ state_codes = pd.read_csv(r"C:\Users\Josh\OneDrive\Documents\Data_Challenge\Scri
 dv=pd.read_csv('https://covidtracking.com/data/download/all-states-history.csv')
 
 dv = dv.drop('positiveScore', 1)
-dv = dv.replace({'#REF!': "Not Defined"})
+dv = dv.replace({'#REF!': np.nan})
 dv[['date', 'state', 'dataQualityGrade']] = dv[['date', 'state', 'dataQualityGrade']].fillna(value="Not Defined")
 
 dv['timeWeeks'] = (pd.Timestamp.now().normalize() - pd.to_datetime(dv['date'])) / np.timedelta64(1, 'D')
@@ -630,40 +630,6 @@ def toggle_showmore_container2(toggle_value):
         return {'display': 'none'}
 
 @app.callback(
-    [Output('gasses', 'value')],
-    [Input('allgas', 'n_clicks'),
-     Input('dallgas', 'n_clicks')],
-    [State('gasses', 'value'),
-     State('gasses', 'options')]
-)
-def select_deselect_all_gasses(allgas,dallgas,gas_value,gas_options):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    
-    if changed_id == 'allgas.n_clicks':
-        return([[value['value'] for value in gas_options]])
-    elif changed_id == 'dallgas.n_clicks':
-        return([[]])
-    else:
-        return([gas_value])
-
-@app.callback(
-    [Output('gasses2', 'value')],
-    [Input('allgas2', 'n_clicks'),
-     Input('dallgas2', 'n_clicks')],
-    [State('gasses2', 'value'),
-     State('gasses2', 'options')]
-)
-def select_deselect_all_gasses2(allgas,dallgas,gas_value,gas_options):
-    changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    
-    if changed_id == 'allgas2.n_clicks':
-        return([[value['value'] for value in gas_options]])
-    elif changed_id == 'dallgas2.n_clicks':
-        return([[]])
-    else:
-        return([gas_value])
-
-@app.callback(
     [Output('surfactants', 'value')],
     [Input('allsurf', 'n_clicks'),
      Input('dallsurf', 'n_clicks')],
@@ -772,7 +738,9 @@ def update_master_table_styles(x,y):
     }]
 
 @app.callback(
-    Output("comp1_2D_graph", "figure"),
+    [Output("comp1_2D_graph", "figure"),
+    Output("comp1_2D_table", "data"),
+    Output("comp1_2D_table", "columns")],
     [Input("select-xaxis", "value"),
      Input("select-yaxis", "value"),
      Input('addComp', 'value'),
@@ -782,7 +750,7 @@ def update_master_table_styles(x,y):
      Input('surfactants', 'value'),
      Input('sconc', 'value')],
 )
-def update_comp1_2D_graph(selected_x, selected_y, comp, fit, order, ga, sur, surc):
+def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
     cl = dv[dv['timeWeeks'] <= ga]
 
     codes = []
@@ -794,32 +762,28 @@ def update_comp1_2D_graph(selected_x, selected_y, comp, fit, order, ga, sur, sur
     cleaned = ea[ea["dataQualityGrade"].isin(surc)]
 
     data = []
-    check = 0
     for i in names:
-        check = 0
         name_array = cleaned[cleaned.state == i]
-        for x in name_array[selected_x]:
-            if x == "None":
-                check = 1
-                break
-        if check == 1:
-            continue
-        for x in name_array[selected_y]:
-            if x == "None":
-                check = 1
-                break
-        if check == 1:
-            continue
 
-        if len(name_array.Color.values) == 0:
-            group_value = "none"
-        else:
+        if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
             group_value = str(name_array.state.values[0])
 
+            name_array = name_array.dropna(subset=[selected_x, selected_y],axis="rows")
+            name_array.reset_index(drop=True)
+            name_array.sort_values(by=selected_x, inplace=True)
+
+            if len(name_array[selected_x]) > 2:
+                x = np.array(name_array[selected_x])
+                y = np.array(name_array[selected_y])
+            else:
+                continue
+        else:
+            continue
+
         if('Scatter' in fit):
-            trace = go.Scattergl(x=name_array[selected_x],y=name_array[selected_y],
+            trace = go.Scattergl(x=x,y=y,
             hovertext= "Date Recorded: " + name_array.date
-            + "<br />State: " + name_array.state
+            + "<br />State: " + i
             + "<br />Data Quality: " + name_array["dataQualityGrade"],
             hoverinfo='text',mode='markers', marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
             name=i,legendgroup=group_value)
@@ -831,157 +795,130 @@ def update_comp1_2D_graph(selected_x, selected_y, comp, fit, order, ga, sur, sur
                 showLegend = False
             else:
                 showLegend = True
-
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-
-                x = np.array(np.sort(name_array[selected_x].values.astype(float)))
-                y = np.array(name_array[selected_y].values.astype(float))
                 
-                z = np.polyfit(x,y,order)
-                f = np.poly1d(z)
+            z = np.polyfit(x,y,order)
+            f = np.poly1d(z)
 
-                y_new = f(x)
+            y_new = f(x)
 
-                f_new = []
-                for num in f:
-                    if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
-                        f_new.append(format(num,'.3e'))
-                    else:
-                        f_new.append(np.round(num,3))
+            f_new = []
+            for num in f:
+                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                    f_new.append(format(num,'.3e'))
+                else:
+                    f_new.append(np.round(num,3))
 
-                if order == 1:
-                    equation = "y = " + str(f_new[1]) + "x + " + str(f_new[0])
-                    residuals = y- y_new
-                    ss_res = np.sum(residuals**2)
-                    ss_tot = np.sum((y-np.mean(y))**2)
-                    r_squared = str(np.round(1 - (ss_res / ss_tot),3))
+            if order == 1:
+                equation = "y = " + str(f_new[1]) + "x + " + str(f_new[0])
+                residuals = y- y_new
+                ss_res = np.sum(residuals**2)
+                ss_tot = np.sum((y-np.mean(y))**2)
+                r_squared = str(np.round(1 - (ss_res / ss_tot),3))
 
-                elif order == 2:
-                    equation = "y = " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
-                    r_squared = "Non-Linear"
-                elif order == 3:
-                    equation = "y = " + str(f_new[3]) + "x³ + " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
-                    r_squared = "Non-Linear"
+            elif order == 2:
+                equation = "y = " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
+                r_squared = "Non-Linear"
+            elif order == 3:
+                equation = "y = " + str(f_new[3]) + "x³ + " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
+                r_squared = "Non-Linear"
 
-                trace = go.Scattergl(x = x, y = y_new,
-                hovertext= "State: " + name_array.state
-                + "<br />" + equation
-                + "<br />R Squared: " + r_squared,
-                hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
-                name=i,showlegend=showLegend,legendgroup=group_value)
+            trace = go.Scattergl(x = x, y = y_new,
+            hovertext= "State: " + name_array.state
+            + "<br />" + equation
+            + "<br />R Squared: " + r_squared,
+            hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
+            name=i,showlegend=showLegend,legendgroup=group_value)
 
-                data.append(trace)
-
-            else:
-                continue
+            data.append(trace)
 
         if('Log-Fit' in fit):
             if('Scatter' in fit or "Poly-Fit" in fit):
                 showLegend = False
             else:
                 showLegend = True
+
+            def logarithmic(x, a, b, c):
+                return  a * np.log(b * x) + c
             
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-                x = np.array(np.sort(name_array[selected_x].values.astype(float)))
-                y = np.array(name_array[selected_y].values.astype(float))
+            popt, _ = curve_fit(logarithmic, x, y, maxfev = 999999999)
 
-                def logarithmic(x, a, b, c):
-                    return  a * np.log(b * x) + c
-                
-                popt, _ = curve_fit(logarithmic, x, y, maxfev = 999999999)
+            y_new = logarithmic(x, popt[0],popt[1], popt[2])
 
-                y_new = logarithmic(x, popt[0],popt[1], popt[2])
+            f_new = []
+            for num in popt:
+                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                    f_new.append(format(num,'.3e'))
+                else:
+                    f_new.append(np.round(num,3))
 
-                f_new = []
-                for num in popt:
-                    if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
-                        f_new.append(format(num,'.3e'))
-                    else:
-                        f_new.append(np.round(num,3))
+            trace = go.Scattergl(x = x, y = y_new,
+            hovertext= "State: " + i
+            + "<br />y = " + str(f_new[0]) + " * log(" + str(f_new[1]) + " * x) + " + str(f_new[2]),
+            hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
+            name=i,showlegend=showLegend,legendgroup=group_value)
 
-                trace = go.Scattergl(x = x, y = y_new,
-                hovertext= "State: " + name_array.state
-                + "<br />y = " + str(f_new[0]) + " * log(" + str(f_new[1]) + " * " + np.round(x,2).astype(str) + ") + " + str(f_new[2]),
-                hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
-                name=i,showlegend=showLegend,legendgroup=group_value)
-
-                data.append(trace)
-
-            else:
-                continue
+            data.append(trace)
 
         if('Exp-Fit' in fit):
             if('Scatter' in fit or "Poly-Fit" in fit or "Log-Fit" in fit):
                 showLegend = False
             else:
                 showLegend = True
+
+            def exponential(x, a, b, c):
+                return a * np.exp(b * x) + c
             
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-                x = np.array(np.sort(name_array[selected_x].values.astype(float)))
-                y = np.array(name_array[selected_y].values.astype(float))
+            popt, _ = curve_fit(exponential, x, y, maxfev = 999999999)
 
-                def exponential(x, a, b, c):
-                    return a * np.exp(b * x) + c
-                
-                popt, _ = curve_fit(exponential, x, y, maxfev = 999999999)
+            y_new = exponential(x, popt[0],popt[1],popt[2])
 
-                y_new = exponential(x, popt[0],popt[1],popt[2])
+            f_new = []
+            for num in popt:
+                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                    f_new.append(format(num,'.3e'))
+                else:
+                    f_new.append(np.round(num,3))
 
-                f_new = []
-                for num in popt:
-                    if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
-                        f_new.append(format(num,'.3e'))
-                    else:
-                        f_new.append(np.round(num,3))
+            trace = go.Scattergl(x = x, y = y_new,
+            hovertext= "State: " + i
+            + "<br />y = " + str(f_new[0]) + " * e^(" + str(f_new[1]) + " * x) + " + str(f_new[2]),
+            hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
+            name=i,showlegend=showLegend,legendgroup=group_value)
 
-                trace = go.Scattergl(x = x, y = y_new,
-                hovertext= "State: " + name_array.state
-                + "<br />y = " + str(f_new[0]) + " * e^(" + str(f_new[1]) + " * " + np.round(x,2).astype(str) + ") + " + str(f_new[2]),
-                hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
-                name=i,showlegend=showLegend,legendgroup=group_value)
-
-                data.append(trace)
-
-            else:
-                continue
+            data.append(trace)
 
         if('Power-Fit' in fit):
             if('Scatter' in fit or "Poly-Fit" in fit or "Log-Fit" in fit or "Exp-Fit" in fit):
                 showLegend = False
             else:
                 showLegend = True
+
+            def power(x, a, N, b):
+                return a * np.power(x,N) + b
             
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-                x = np.array(np.sort(name_array[selected_x].values.astype(float)))
-                y = np.array(name_array[selected_y].values.astype(float))
+            popt, _ = curve_fit(power, x, y, maxfev = 999999999)
 
-                def power(x, a, N, b):
-                    return a * np.power(x,N) + b
-                
-                popt, _ = curve_fit(power, x, y, maxfev = 999999999)
+            y_new = power(x, popt[0],popt[1],popt[2])
 
-                y_new = power(x, popt[0],popt[1],popt[2])
+            f_new = []
+            for num in popt:
+                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                    f_new.append(format(num,'.3e'))
+                else:
+                    f_new.append(np.round(num,3))
+            
 
-                f_new = []
-                for num in popt:
-                    if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
-                        f_new.append(format(num,'.3e'))
-                    else:
-                        f_new.append(np.round(num,3))
-                
+            trace = go.Scattergl(x = x, y = y_new,
+            hovertext= "State: " + i
+            + "<br />y = " + str(f_new[0]) + " * x^(" + str(f_new[1]) + ") + " + str(f_new[2]),
+            hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
+            name=i,showlegend=showLegend,legendgroup=group_value)
 
-                trace = go.Scattergl(x = x, y = y_new,
-                hovertext= "State: " + name_array.state
-                + "<br />y = " + str(f_new[0]) + " * " + np.round(x,2).astype(str) + "**" + str(f_new[1]) + " + " + str(f_new[2]),
-                hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
-                name=i,showlegend=showLegend,legendgroup=group_value)
+            data.append(trace)
 
-                data.append(trace)
+    cleaned = cleaned[[selected_x,selected_y]]
 
-            else:
-                continue
-
-    return {
+    return [{
         'data': data,
         'layout': go.Layout(
             yaxis={
@@ -1003,41 +940,12 @@ def update_comp1_2D_graph(selected_x, selected_y, comp, fit, order, ga, sur, sur
             hovermode="closest",
             height=Graph_Height
         )
-    }
+    },cleaned.to_dict('records'), [{'id': c, 'name': c} for c in cleaned.columns]]
 
 @app.callback(
-    [Output("comp1_2D_table", "data"),
-     Output("comp1_2D_table", "columns")],
-    [Input("select-xaxis", "value"),
-     Input("select-yaxis", "value"),
-     Input('gasses', 'value'),
-     Input('surfactants', 'value'),
-     Input('sconc', 'value')],
-)
-def update_comp1_2D_table(selected_x, selected_y, ga, sur, surc):
-    cl = dv[dv['timeWeeks'] <= ga]
-
-    codes = []
-    for element in sur:
-        code = element[element.find("(")+1:element.find(")")]
-        codes.append(code)
-    ea = cl[cl["state"].isin(codes)]
-
-    cleaned = ea[ea["dataQualityGrade"].isin(surc)]
-
-    cleaned = cleaned[cleaned[selected_x] != "None"]
-    cleaned = cleaned[cleaned[selected_y] != "None"]
-
-    final = cleaned.columns
-    final = final.drop([selected_x,selected_y])
-    cleaned = cleaned.drop(final, axis=1)
-
-    return (
-        cleaned.to_dict('records'), [{'id': c, 'name': c} for c in cleaned.columns]
-    )
-
-@app.callback(
-    Output("comp2_2D_graph", "figure"),
+    [Output("comp2_2D_graph", "figure"),
+     Output("comp2_2D_table", "data"),
+     Output("comp2_2D_table", "columns")],
     [Input("select-xaxis2", "value"),
      Input("select-yaxis2", "value"),
      Input('addComp', 'value'),
@@ -1047,9 +955,9 @@ def update_comp1_2D_table(selected_x, selected_y, ga, sur, surc):
      Input('surfactants2', 'value'),
      Input('sconc2', 'value')],
 )
-def update_comp2_2D_graph(selected_x, selected_y, comp, fit, order, ga, sur, surc):
+def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
     if comp == "No Compare":
-        return {}
+        return [{},[],[]]
         
     cl = dv[dv['timeWeeks'] <= ga]
 
@@ -1062,194 +970,163 @@ def update_comp2_2D_graph(selected_x, selected_y, comp, fit, order, ga, sur, sur
     cleaned = ea[ea["dataQualityGrade"].isin(surc)]
 
     data = []
-    check = 0
     for i in names:
-        check = 0
         name_array = cleaned[cleaned.state == i]
-        for x in name_array[selected_x]:
-            if x == "None":
-                check = 1
-                break
-        if check == 1:
-            continue
-        for x in name_array[selected_y]:
-            if x == "None":
-                check = 1
-                break
-        if check == 1:
-            continue
 
-        if len(name_array.Color.values) == 0:
-            group_value = "none"
-        else:
+        if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
             group_value = str(name_array.state.values[0])
 
+            name_array = name_array.dropna(subset=[selected_x, selected_y],axis="rows")
+            name_array.reset_index(drop=True)
+            name_array.sort_values(by=selected_x, inplace=True)
+
+            if len(name_array[selected_x]) > 2:
+                x = np.array(name_array[selected_x])
+                y = np.array(name_array[selected_y])
+            else:
+                continue
+        else:
+            continue
+
         if('Scatter' in fit):
-            trace = go.Scattergl(x=name_array[selected_x],y=name_array[selected_y],
+            trace = go.Scattergl(x=x,y=y,
             hovertext= "Date Recorded: " + name_array.date
-            + "<br />State: " + name_array.state
+            + "<br />State: " + i
             + "<br />Data Quality: " + name_array["dataQualityGrade"],
             hoverinfo='text',mode='markers', marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
             name=i,legendgroup=group_value)
 
             data.append(trace)
-
+        
         if('Poly-Fit' in fit):
             if('Scatter' in fit):
                 showLegend = False
             else:
                 showLegend = True
-
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-
-                x = np.array(np.sort(name_array[selected_x].values.astype(float)))
-                y = np.array(name_array[selected_y].values.astype(float))
                 
-                z = np.polyfit(x,y,order)
-                f = np.poly1d(z)
+            z = np.polyfit(x,y,order)
+            f = np.poly1d(z)
 
-                y_new = f(x)
+            y_new = f(x)
 
-                f_new = []
-                for num in f:
-                    if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
-                        f_new.append(format(num,'.3e'))
-                    else:
-                        f_new.append(np.round(num,3))
+            f_new = []
+            for num in f:
+                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                    f_new.append(format(num,'.3e'))
+                else:
+                    f_new.append(np.round(num,3))
 
-                if order == 1:
-                    equation = "y = " + str(f_new[1]) + "x + " + str(f_new[0])
-                    residuals = y- y_new
-                    ss_res = np.sum(residuals**2)
-                    ss_tot = np.sum((y-np.mean(y))**2)
-                    r_squared = str(np.round(1 - (ss_res / ss_tot),3))
+            if order == 1:
+                equation = "y = " + str(f_new[1]) + "x + " + str(f_new[0])
+                residuals = y- y_new
+                ss_res = np.sum(residuals**2)
+                ss_tot = np.sum((y-np.mean(y))**2)
+                r_squared = str(np.round(1 - (ss_res / ss_tot),3))
 
-                elif order == 2:
-                    equation = "y = " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
-                    r_squared = "Non-Linear"
-                elif order == 3:
-                    equation = "y = " + str(f_new[3]) + "x³ + " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
-                    r_squared = "Non-Linear"
+            elif order == 2:
+                equation = "y = " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
+                r_squared = "Non-Linear"
+            elif order == 3:
+                equation = "y = " + str(f_new[3]) + "x³ + " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
+                r_squared = "Non-Linear"
 
-                trace = go.Scattergl(x = x, y = y_new,
-                hovertext= "State: " + name_array.state
-                + "<br />" + equation
-                + "<br />R Squared: " + r_squared,
-                hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
-                name=i,showlegend=showLegend,legendgroup=group_value)
+            trace = go.Scattergl(x = x, y = y_new,
+            hovertext= "State: " + name_array.state
+            + "<br />" + equation
+            + "<br />R Squared: " + r_squared,
+            hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
+            name=i,showlegend=showLegend,legendgroup=group_value)
 
-                data.append(trace)
-
-            else:
-                continue
+            data.append(trace)
 
         if('Log-Fit' in fit):
             if('Scatter' in fit or "Poly-Fit" in fit):
                 showLegend = False
             else:
                 showLegend = True
+
+            def logarithmic(x, a, b, c):
+                return  a * np.log(b * x) + c
             
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-                x = np.array(np.sort(name_array[selected_x].values.astype(float)))
-                y = np.array(name_array[selected_y].values.astype(float))
+            popt, _ = curve_fit(logarithmic, x, y, maxfev = 999999999)
 
-                def logarithmic(x, a, b, c):
-                    return  a * np.log(b * x) + c
-                
-                popt, _ = curve_fit(logarithmic, x, y, maxfev = 999999999)
+            y_new = logarithmic(x, popt[0],popt[1], popt[2])
 
-                y_new = logarithmic(x, popt[0],popt[1], popt[2])
+            f_new = []
+            for num in popt:
+                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                    f_new.append(format(num,'.3e'))
+                else:
+                    f_new.append(np.round(num,3))
 
-                f_new = []
-                for num in popt:
-                    if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
-                        f_new.append(format(num,'.3e'))
-                    else:
-                        f_new.append(np.round(num,3))
+            trace = go.Scattergl(x = x, y = y_new,
+            hovertext= "State: " + i
+            + "<br />y = " + str(f_new[0]) + " * log(" + str(f_new[1]) + " * x) + " + str(f_new[2]),
+            hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
+            name=i,showlegend=showLegend,legendgroup=group_value)
 
-                trace = go.Scattergl(x = x, y = y_new,
-                hovertext= "State: " + name_array.state
-                + "<br />y = " + str(f_new[0]) + " * log(" + str(f_new[1]) + " * " + np.round(x,2).astype(str) + ") + " + str(f_new[2]),
-                hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
-                name=i,showlegend=showLegend,legendgroup=group_value)
-
-                data.append(trace)
-
-            else:
-                continue
+            data.append(trace)
 
         if('Exp-Fit' in fit):
             if('Scatter' in fit or "Poly-Fit" in fit or "Log-Fit" in fit):
                 showLegend = False
             else:
                 showLegend = True
+
+            def exponential(x, a, b, c):
+                return a * np.exp(b * x) + c
             
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-                x = np.array(np.sort(name_array[selected_x].values.astype(float)))
-                y = np.array(name_array[selected_y].values.astype(float))
+            popt, _ = curve_fit(exponential, x, y, maxfev = 999999999)
 
-                def exponential(x, a, b, c):
-                    return a * np.exp(b * x) + c
-                
-                popt, _ = curve_fit(exponential, x, y, maxfev = 999999999)
+            y_new = exponential(x, popt[0],popt[1],popt[2])
 
-                y_new = exponential(x, popt[0],popt[1],popt[2])
+            f_new = []
+            for num in popt:
+                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                    f_new.append(format(num,'.3e'))
+                else:
+                    f_new.append(np.round(num,3))
 
-                f_new = []
-                for num in popt:
-                    if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
-                        f_new.append(format(num,'.3e'))
-                    else:
-                        f_new.append(np.round(num,3))
+            trace = go.Scattergl(x = x, y = y_new,
+            hovertext= "State: " + i
+            + "<br />y = " + str(f_new[0]) + " * e^(" + str(f_new[1]) + " * x) + " + str(f_new[2]),
+            hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
+            name=i,showlegend=showLegend,legendgroup=group_value)
 
-                trace = go.Scattergl(x = x, y = y_new,
-                hovertext= "State: " + name_array.state
-                + "<br />y = " + str(f_new[0]) + " * e^(" + str(f_new[1]) + " * " + np.round(x,2).astype(str) + ") + " + str(f_new[2]),
-                hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
-                name=i,showlegend=showLegend,legendgroup=group_value)
-
-                data.append(trace)
-
-            else:
-                continue
+            data.append(trace)
 
         if('Power-Fit' in fit):
             if('Scatter' in fit or "Poly-Fit" in fit or "Log-Fit" in fit or "Exp-Fit" in fit):
                 showLegend = False
             else:
                 showLegend = True
+
+            def power(x, a, N, b):
+                return a * np.power(x,N) + b
             
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-                x = np.array(np.sort(name_array[selected_x].values.astype(float)))
-                y = np.array(name_array[selected_y].values.astype(float))
+            popt, _ = curve_fit(power, x, y, maxfev = 999999999)
 
-                def power(x, a, N, b):
-                    return a * np.power(x,N) + b
-                
-                popt, _ = curve_fit(power, x, y, maxfev = 999999999)
+            y_new = power(x, popt[0],popt[1],popt[2])
 
-                y_new = power(x, popt[0],popt[1],popt[2])
+            f_new = []
+            for num in popt:
+                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                    f_new.append(format(num,'.3e'))
+                else:
+                    f_new.append(np.round(num,3))
+            
 
-                f_new = []
-                for num in popt:
-                    if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
-                        f_new.append(format(num,'.3e'))
-                    else:
-                        f_new.append(np.round(num,3))
-                
+            trace = go.Scattergl(x = x, y = y_new,
+            hovertext= "State: " + i
+            + "<br />y = " + str(f_new[0]) + " * x^(" + str(f_new[1]) + ") + " + str(f_new[2]),
+            hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
+            name=i,showlegend=showLegend,legendgroup=group_value)
 
-                trace = go.Scattergl(x = x, y = y_new,
-                hovertext= "State: " + name_array.state
-                + "<br />y = " + str(f_new[0]) + " * " + np.round(x,2).astype(str) + "**" + str(f_new[1]) + " + " + str(f_new[2]),
-                hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
-                name=i,showlegend=showLegend,legendgroup=group_value)
+            data.append(trace)
 
-                data.append(trace)
+    cleaned = cleaned[[selected_x,selected_y]]
 
-            else:
-                continue
-
-    return {
+    return [{
         'data': data,
         'layout': go.Layout(
             yaxis={
@@ -1271,42 +1148,7 @@ def update_comp2_2D_graph(selected_x, selected_y, comp, fit, order, ga, sur, sur
             hovermode="closest",
             height=Graph_Height
         )
-    }
-
-@app.callback(
-    [Output("comp2_2D_table", "data"),
-     Output("comp2_2D_table", "columns")],
-    [Input("select-xaxis2", "value"),
-     Input("select-yaxis2", "value"),
-     Input("addComp","value"),
-     Input('gasses2', 'value'),
-     Input('surfactants2', 'value'),
-     Input('sconc2', 'value')],
-)
-def update_comp2_2D_table(selected_x, selected_y, comp, ga, sur, surc):
-    if comp == "No Compare":
-        return [[],[]]
-
-    cl = dv[dv['timeWeeks'] <= ga]
-
-    codes = []
-    for element in sur:
-        code = element[element.find("(")+1:element.find(")")]
-        codes.append(code)
-    ea = cl[cl["state"].isin(codes)]
-
-    cleaned = ea[ea["dataQualityGrade"].isin(surc)]
-
-    cleaned = cleaned[cleaned[selected_x] != "None"]
-    cleaned = cleaned[cleaned[selected_y] != "None"]
-
-    final = cleaned.columns
-    final = final.drop([selected_x,selected_y])
-    cleaned = cleaned.drop(final, axis=1)
-
-    return (
-        cleaned.to_dict('records'), [{'id': c, 'name': c} for c in cleaned.columns]
-    )
+    },cleaned.to_dict('records'), [{'id': c, 'name': c} for c in cleaned.columns]]
 
 if __name__ == '__main__':
     app.run_server(debug=True)
