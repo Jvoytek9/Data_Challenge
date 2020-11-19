@@ -201,11 +201,11 @@ graph = dbc.Row([
                     html.Summary("Time-Elapsed(Weeks)"),
 
                     html.Div([
-                        dcc.Slider(
+                        dcc.RangeSlider(
                             id="gasses2",
                             max=max(intervals),
                             min=min(intervals),
-                            value=max(intervals),
+                            value=[min(intervals),max(intervals)],
                             step=10,
                             included=True,
                             marks= {i: '{}'.format(i) for i in intervals},
@@ -343,11 +343,11 @@ graph = dbc.Row([
                     html.Summary("Time-Elapsed(Weeks)"),
 
                     html.Div([
-                        dcc.Slider(
+                        dcc.RangeSlider(
                             id="gasses",
                             max=max(intervals),
                             min=min(intervals),
-                            value=max(intervals),
+                            value=[min(intervals),max(intervals)],
                             step=10,
                             included=True,
                             marks= {i: '{}'.format(i) for i in intervals},
@@ -1164,8 +1164,8 @@ def update_master_table_styles(x,y):
      Input('sconc', 'value')],
 )
 def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
-    cl = dv[dv['timeWeeks'] <= ga]
-
+    cl = dv[(dv['timeWeeks'] >= ga[0]) & (dv['timeWeeks'] <= ga[1])]
+    
     codes = []
     for element in sur:
         code = element[element.find("(")+1:element.find(")")]
@@ -1376,8 +1376,8 @@ def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
 def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
     if comp == "No Compare":
         return [{},[],[]]
-        
-    cl = dv[dv['timeWeeks'] <= ga]
+
+    cl = dv[(dv['timeWeeks'] >= ga[0]) & (dv['timeWeeks'] <= ga[1])]
 
     codes = []
     for element in sur:
