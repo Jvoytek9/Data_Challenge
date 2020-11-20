@@ -1063,12 +1063,11 @@ def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown
         return ["Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete",[{"id":"Form Not Yet Complete","name":"Form Not Yet Complete"}]]
     
     code = str(state)[str(state).find("(")+1:str(state).find(")")]
-    state_data = dv.loc[(dv['state'] == code) & (dv['timeWeeks'] <= 14)]
-    state_data.dropna(subset=['positive', 'totalTestsViral'],inplace=True)
-    positives = np.sum(state_data['positive'].to_numpy())
-    totalTests = np.sum(state_data['totalTestsViral'].to_numpy())
+    state_data = dv.loc[(dv['state'] == code) & (dv['timeWeeks'] < 2)]
+    state_data.dropna(subset=['positive', 'totalTestResults'],inplace=True)
+    positives = np.sum(state_data['positive'].values)
+    totalTests = np.sum(state_data['totalTestResults'].values)
     state_stat = str(np.round(100 * (positives/totalTests) / 14,2)) + "%"
-    #calc doesnt make sense really
 
     fip_data = master.loc[master['COUNTY'] == county]
     fip = fip_data["FIPS"].values[0]
@@ -1090,9 +1089,17 @@ def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown
     weights = weights.values
     for i in range(0,len(activities)):
         weighted_sum += activities[i] * weights[i]
-    behaviour_stat = str(np.round(weighted_sum / np.sum(activities),2))
-    behaviour_stat += "%"
-    #divide by which sum?
+    behaviour = np.round(weighted_sum / np.sum(weights),2)
+    interval_data = master["weightedAvgInteveral"]
+    interval_data.dropna(inplace=True)
+    interval_data = interval_data.values
+    for i in range(0,len(interval_data)):
+        ranges = str(interval_data[i]).strip().split("-")
+        low = float(ranges[0])
+        high = float(ranges[1])
+        if behaviour >= low and behaviour < high:
+            break
+    behaviour_stat = str(master["riskString"].values[i])
     	
     race_data = master.loc[master['RACE'] == race]
     mortality_stat = race_data['mortRateRace'].values[0]
@@ -1117,7 +1124,7 @@ def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown
 
     med_data = master[master['prexistingCond'].isin(med)]
     med_stat = med_data[['prexistingCond','mortRatePC']]
-    med_stat.columns = ['Comorbidity', 'Mortality Note Associated']
+    med_stat.columns = ['Comorbidity', 'Mortality Risk Note Associated']
 
     return([state_stat,
             county_stat,
