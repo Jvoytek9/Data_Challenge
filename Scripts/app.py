@@ -61,8 +61,10 @@ Graph_Height = 605
 today = date.today()
 today = today.strftime("%m/%d/%Y")
 
-state_codes = pd.read_csv(r"C:\Users\Josh\OneDrive\Documents\Data_Challenge\Scripts\data\states.csv")
-master = pd.read_csv(r"C:\Users\Josh\OneDrive\Documents\Data_Challenge\Scripts\data\master.csv")
+basedir = os.path.abspath(os.path.dirname(__file__))
+
+state_codes = pd.read_csv(basedir+'/data/states.csv')
+master = pd.read_csv(basedir+'/data/master.csv')
 dv=pd.read_csv('https://covidtracking.com/data/download/all-states-history.csv')
 
 dv = dv.drop('positiveScore', 1)
@@ -287,7 +289,7 @@ graph = dbc.Row([
             ],style={"background-color":"white","border-radius":"3px","border":"1px solid #cccccc","margin-left": "auto", "margin-right": "auto", "width": "80%","height":"10%"},no_gutters=True),
 
             html.Div([
-                
+
                 dbc.Row([
                     dcc.RadioItems(
                         id='toggle',
@@ -538,23 +540,23 @@ home = html.Div([
 
                     html.Div([
                         html.H3("Risk Calculator",style={"display":"block"}),
-                        
+
                         html.Br(),
                         html.H5("1. Basic Information: ",style={"display":"block"}),
-                        
+
                         dcc.RadioItems(id="sex_input", options=[{'label': i, 'value': i} for i in master["sex"].dropna()],labelStyle={"padding-right":"5px"}),
 
                         dcc.Input(id="age_input", type="number", placeholder="Enter Age", min=0, debounce=True,style={"text-align":"center","width":"25%"}),
 
-                        dcc.Dropdown(id="race_input", placeholder="Select Race", 
+                        dcc.Dropdown(id="race_input", placeholder="Select Race",
                         options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(master["RACE"].dropna())))]
                         ,style={"width":"50%","margin":"auto"}),
 
-                        dcc.Dropdown(id="state_input", placeholder="Select State", 
+                        dcc.Dropdown(id="state_input", placeholder="Select State",
                         options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(state_codes["State"].dropna()+"("+state_codes["Code"].dropna()+")")))]
                         ,style={"width":"50%","margin":"auto"}),
 
-                        dcc.Dropdown(id="county_input", placeholder="Select County", 
+                        dcc.Dropdown(id="county_input", placeholder="Select County",
                         options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(master["COUNTY"].dropna())))]
                         ,style={"width":"50%","margin":"auto"}),
 
@@ -676,7 +678,7 @@ home = html.Div([
                                 dcc.Input(id="pool_input", type="number", min=0, value=0, placeholder= "", style={"text-align":"center"})
                             )
                         ],style={"width":"60%","margin":"auto"}),
-                            
+
                         dbc.Row([
                             dbc.Col(
                                 html.P("Went to a salon/barber:")
@@ -730,7 +732,7 @@ home = html.Div([
                                 dcc.Input(id="bar_input", type="number", min=0, value=0, placeholder= "", style={"text-align":"center"})
                             )
                         ],style={"width":"60%","margin":"auto"}),
-                    
+
                         html.Br(),
                         html.H3("Results:",style={"text-decoration":"underline"}),
                         html.Br(),
@@ -738,8 +740,8 @@ home = html.Div([
                         html.H4("State Percent Positive: ",style={"display":"inline-block"}),
                         dcc.Input(id='state_stat', value='', type='text',style={"display":"inline-block","width":"40%","text-align":"center"},readOnly=True),
                         html.Br(),
-                        html.P("The percent positive is the percentage of all coronavirus tests performed that come back positive in relation to total tests conducted that day. If the number of total tests remains too low or " + 
-                        "if the number of positive results remains too high for your state, then the percent positive will be high. " + 
+                        html.P("The percent positive is the percentage of all coronavirus tests performed that come back positive in relation to total tests conducted that day. If the number of total tests remains too low or " +
+                        "if the number of positive results remains too high for your state, then the percent positive will be high. " +
                         "A high percent positive value can indicate high transmission within the population or that there are more people with COVID-19 that have not been tested yet.",style={"display":"inline"}),
                         html.Br(),
                         html.Br(),
@@ -759,9 +761,9 @@ home = html.Div([
                         "question mask use county by county. These surveys were conducted from 7/2/2020 - 7/14/2020 and received 250,000 responses. ",style={"display":"inline"}),
                         html.Br(),
                         html.Br(),
-                        html.P("Based on a Monte Carlo simulation conducted in a paper titled",style={"display":"inline","padding-right":"5px"}), 
-                        html.A("“Universal Masking is Urgent in the COVID-19 Pandemic: SEIR and Agent Based Models, Empirical Validation, Policy Recommendations”",href="https://arxiv.org/pdf/2004.13553.pdf",style={"display":"inline"}), 
-                        html.P(", it was discovered that if 80% of a population wore masks, it may be more effective than an indefinite lockdown. " + 
+                        html.P("Based on a Monte Carlo simulation conducted in a paper titled",style={"display":"inline","padding-right":"5px"}),
+                        html.A("“Universal Masking is Urgent in the COVID-19 Pandemic: SEIR and Agent Based Models, Empirical Validation, Policy Recommendations”",href="https://arxiv.org/pdf/2004.13553.pdf",style={"display":"inline"}),
+                        html.P(", it was discovered that if 80% of a population wore masks, it may be more effective than an indefinite lockdown. " +
                         "There was minimal impact when <50% of the population wore masks. If your county has a mask usage average lower than 80%, you should take greater precautions by " +
                         "minimizing unessential activities.",style={"display":"inline"}),
                         html.Br(),
@@ -775,8 +777,8 @@ home = html.Div([
                         html.P("The risks corresponding to each activity was ranked by physicians from the",style={"display":"inline","padding-right":"5px"}),
                         html.A("Texas Medical Association (TMA) COVID-19 Task Force and the TMA Committee on Infectious Diseases.",href="https://www.texmed.org/uploadedFiles/Current/2016_Public_Health/Infectious_Diseases/309193%20Risk%20Assessment%20Chart%20V2_FINAL.pdf",style={"display":"inline","padding-right":"5px"}),
                         html.P("The risk value is based on an assumption that the participants in these activities are still following current recommended " +
-                        "safety protocols like mask-wearing and social distancing when possible. The factors determining risk include: whether the activity is solitary, " + 
-                        "indoors or outdoors, and the amount of people participating. You should consider minimizing certain activities if you scored between moderate " + 
+                        "safety protocols like mask-wearing and social distancing when possible. The factors determining risk include: whether the activity is solitary, " +
+                        "indoors or outdoors, and the amount of people participating. You should consider minimizing certain activities if you scored between moderate " +
                         "risk to very high risk. This will lower your infection risk and the risk you transmit to others while presymptomatic or asymptomatic.",style={"display":"inline"}),
                         html.Br(),
 
@@ -794,10 +796,10 @@ home = html.Div([
                         html.Br(),
                         html.P("It is important to note that an increased risk in infection and mortality races other than White, Non-hispanic does not indicate an inherent immune difference between races. According to the peer-reviewed paper",style={"display":"inline","padding-right":"5px"}),
                         html.A("“The Disproportionate Impact of COVID-19 on Racial and Ethnic Minorities in the United States”",href="https://academic.oup.com/cid/advance-article/doi/10.1093/cid/ciaa815/5860249",style={"display":"inline","padding-right":"5px"}),
-                        html.P(", the differences in infection and mortality rates can be attributed to “minority communities [being] more likely to experience living and working conditions that predispose them to worse outcomes” " + 
+                        html.P(", the differences in infection and mortality rates can be attributed to “minority communities [being] more likely to experience living and working conditions that predispose them to worse outcomes” " +
                         "and other “long-standing structural and societal factors that the COVID-19 pandemic has exposed” such as systemic poverty and medical racism.",style={"display":"inline","padding-right":"5px"}),
                         html.Br(),
-                        
+
                         html.Br(),
                         html.Br(),
                         html.H4("Age Mortality Risk: ",style={"display":"inline-block"}),
@@ -856,7 +858,7 @@ home = html.Div([
                                 },
                                 css=[{'selector': '.row', 'rule': 'margin: 0'}]
                             ),style={"padding-left":20,"padding-right":20})
-                        
+
                     ],style={"padding":"30px","text-align":"center"})
                 ]),
                 dcc.Tab(label='About', children=[
@@ -880,7 +882,7 @@ home = html.Div([
 
                         dbc.Col(
                             dbc.Card([
-                                dbc.CardImg(src="/assets/Maltepes.JPG", top=True,style={"height":"25vh","width":"100%"}),
+                                dbc.CardImg(src="/assets/Maltepes.jpg", top=True,style={"height":"25vh","width":"100%"}),
                                 dbc.CardBody(
                                     [
                                         html.H5("Maria Maltepes", className="card-title"),
@@ -905,7 +907,7 @@ home = html.Div([
                             ])
                         ),
                     ],style={"margin-left":"auto","margin-right":"auto","width":"80%"},no_gutters=True),
-                    
+
                     html.Br(),
                     html.Div([
                         html.A("Here", href="https://covidtracking.com/about-data/data-definitions", style={"display":"inline-block"}),
@@ -954,7 +956,7 @@ def toggle_showmore_container2(toggle_value):
     [State('surfactants', 'value'),
      State('surfactants', 'options')]
 )
-def select_deselect_all_surfactants(allsurf,dallsurf,surf_value,surf_options):          
+def select_deselect_all_surfactants(allsurf,dallsurf,surf_value,surf_options):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if changed_id == 'allsurf.n_clicks':
@@ -971,7 +973,7 @@ def select_deselect_all_surfactants(allsurf,dallsurf,surf_value,surf_options):
     [State('surfactants2', 'value'),
      State('surfactants2', 'options')]
 )
-def select_deselect_all_surfactants2(allsurf,dallsurf,surf_value,surf_options):          
+def select_deselect_all_surfactants2(allsurf,dallsurf,surf_value,surf_options):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
 
     if changed_id == 'allsurf2.n_clicks':
@@ -990,7 +992,7 @@ def select_deselect_all_surfactants2(allsurf,dallsurf,surf_value,surf_options):
 )
 def select_deselect_all_surfconc(allsconc,dallscon,sconc_value,sconc_options):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    
+
     if changed_id == 'allsconc.n_clicks':
         return([[value['value'] for value in sconc_options]])
     elif changed_id == 'dallsconc.n_clicks':
@@ -1007,7 +1009,7 @@ def select_deselect_all_surfconc(allsconc,dallscon,sconc_value,sconc_options):
 )
 def select_deselect_all_surfconc2(allsconc,dallscon,sconc_value,sconc_options):
     changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-    
+
     if changed_id == 'allsconc2.n_clicks':
         return([[value['value'] for value in sconc_options]])
     elif changed_id == 'dallsconc2.n_clicks':
@@ -1036,8 +1038,8 @@ def toggle_compare_container(compare_value):
 
 @app.callback(
     Output('county_input', 'options'),
-    Input('state_input', 'value'),
-    State('county_input', 'options'))
+    [Input('state_input', 'value')],
+    [State('county_input', 'options')])
 def update_counties(state,county):
     if not state:
         return county
@@ -1047,7 +1049,7 @@ def update_counties(state,county):
     counties = states_data['COUNTY'].dropna()
     options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(counties)))]
     return options
-    
+
 
 options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(state_codes["State"].dropna()+"("+state_codes["Code"].dropna()+")")))]
 
@@ -1085,10 +1087,10 @@ options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(state_cod
      Input("bar_input", "value")]
 )
 def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown,BBQ,beach,mall,grandpa,pool,barber,eatIn,plane,buffet,gym,bar):
-    
+
     if state is None or county is None or race is None or sex is None or med is None:
-        return ["Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete",[{"id":"Form Not Yet Complete","name":"Form Not Yet Complete"}]] 
-    
+        return ["Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete",[{"id":"Form Not Yet Complete","name":"Form Not Yet Complete"}]]
+
 
     code = str(state)[str(state).find("(")+1:str(state).find(")")]
     state_data = dv.loc[(dv['state'] == code) & (dv['timeWeeks'] < 2)]
@@ -1098,7 +1100,7 @@ def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown
     sum_dec = 0
     for i in range(0,len(positives)):
         sum_dec += positives[i] / totalTests[i]
-    
+
     state_stat = str(np.round(100 * (sum_dec) / 14,2)) + "%"
 
 
@@ -1133,7 +1135,7 @@ def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown
         if behaviour >= low and behaviour < high:
             break
     behaviour_stat = str(master["riskString"].values[i])
-    	
+
     race_data = master.loc[master['RACE'] == race]
     mortality_stat = race_data['mortRateRace'].values[0]
     infection_stat = race_data['infRateRace'].values[0]
@@ -1205,7 +1207,7 @@ def update_master_table_styles(x,y):
 )
 def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
     cl = dv[(dv['timeWeeks'] >= ga[0]) & (dv['timeWeeks'] <= ga[1])]
-    
+
     codes = []
     for element in sur:
         code = element[element.find("(")+1:element.find(")")]
@@ -1242,13 +1244,13 @@ def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
             name=i,legendgroup=group_value)
 
             data.append(trace)
-        
+
         if('Poly-Fit' in fit):
             if('Scatter' in fit):
                 showLegend = False
             else:
                 showLegend = True
-                
+
             z = np.polyfit(x,y,order)
             f = np.poly1d(z)
 
@@ -1294,7 +1296,7 @@ def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
 
             def logarithmic(x, a, b, c):
                 return  a * np.log(b * x) + c
-            
+
             popt, _ = curve_fit(logarithmic, x, y, maxfev = 999999999)
 
             x_new = np.linspace(x[0], x[-1], 1000)
@@ -1323,7 +1325,7 @@ def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
 
             def exponential(x, a, b, c):
                 return a * np.exp(-b * x) + c
-            
+
             popt, _ = curve_fit(exponential, x, y, p0=(1, 1e-6, 1), maxfev = 999999999)
 
             x_new = np.linspace(x[0], x[-1], 1000)
@@ -1352,7 +1354,7 @@ def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
 
             def power(x, a, N, b):
                 return a * np.power(x,N) + b
-            
+
             popt, _ = curve_fit(power, x, y, maxfev = 999999999)
 
             x_new = np.linspace(x[0], x[-1], 1000)
@@ -1364,7 +1366,7 @@ def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
-            
+
             trace = go.Scattergl(x = x_new, y = y_new,
             hovertext= "State: " + i
             + "<br />y = " + str(f_new[0]) + " * x^(" + str(f_new[1]) + ") + " + str(f_new[2]),
@@ -1455,13 +1457,13 @@ def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
             name=i,legendgroup=group_value)
 
             data.append(trace)
-        
+
         if('Poly-Fit' in fit):
             if('Scatter' in fit):
                 showLegend = False
             else:
                 showLegend = True
-                
+
             z = np.polyfit(x,y,order)
             f = np.poly1d(z)
 
@@ -1507,7 +1509,7 @@ def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
 
             def logarithmic(x, a, b, c):
                 return  a * np.log(b * x) + c
-            
+
             popt, _ = curve_fit(logarithmic, x, y, maxfev = 999999999)
 
             x_new = np.linspace(x[0], x[-1], 1000)
@@ -1536,7 +1538,7 @@ def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
 
             def exponential(x, a, b, c):
                 return a * np.exp(-b * x) + c
-            
+
             popt, _ = curve_fit(exponential, x, y, p0=(1, 1e-6, 1), maxfev = 999999999)
 
             x_new = np.linspace(x[0], x[-1], 1000)
@@ -1565,7 +1567,7 @@ def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
 
             def power(x, a, N, b):
                 return a * np.power(x,N) + b
-            
+
             popt, _ = curve_fit(power, x, y, maxfev = 999999999)
 
             x_new = np.linspace(x[0], x[-1], 1000)
@@ -1577,7 +1579,7 @@ def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
-            
+
             trace = go.Scattergl(x = x_new, y = y_new,
             hovertext= "State: " + i
             + "<br />y = " + str(f_new[0]) + " * x^(" + str(f_new[1]) + ") + " + str(f_new[2]),
