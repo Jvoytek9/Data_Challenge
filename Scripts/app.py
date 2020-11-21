@@ -753,7 +753,7 @@ home = html.Div([
                         html.H4("County Spread Rate: ",style={"display":"inline-block"}),
                         dcc.Input(id='county_stat', value='', type='text',style={"display":"inline","width":"40%","text-align":"center"},readOnly=True),
                         html.Br(),
-                        html.P("Mask usage by county was retrieved from the",style={"display":"inline","padding-right":"5px"}),
+                        html.P("This statistic is measured by the reported mask usage in your county. This data was retrieved from the",style={"display":"inline","padding-right":"5px"}),
                         html.A("NYTimes COVID-19 data: United States.", href="https://github.com/nytimes/covid-19-data/tree/master/mask-use",style={"display":"inline","padding-right":"5px"}),
                         html.P("The NYTimes requested a large scale survey by the firm Dynata to " +
                         "question mask use county by county. These surveys were conducted from 7/2/2020 - 7/14/2020 and received 250,000 responses. ",style={"display":"inline"}),
@@ -812,7 +812,7 @@ home = html.Div([
                         html.A("hold the highest percentage of all COVID-19 cases.",href="https://covid.cdc.gov/covid-data-tracker/#demographics",style={"display":"inline","padding-right":"5px"}),
                         html.P("This is important to note because it indicates a shared responsibility of 18-29 year olds to minimize their risk of transmitting the virus by social distancing and wearing masks. The paper,",style={"display":"inline","padding-right":"5px"}),
                         html.A("“Why does COVID-19 disproportionately affect older people?”",href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7288963/",style={"display":"inline"}),
-                        html.P(", they attribute the disproportionate mortality risk to” molecular differences between young, middle-aged, and older people.",style={"display":"inline"}),
+                        html.P(", attributes the disproportionate mortality risk to “molecular differences between young, middle-aged, and older people”.",style={"display":"inline"}),
                         html.Br(),
 
                         html.Br(),
