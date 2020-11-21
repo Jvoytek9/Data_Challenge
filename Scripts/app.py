@@ -1,8 +1,6 @@
 import os
 from datetime import date
-import datetime
 import pandas as pd
-import itertools
 import math
 import numpy as np
 np.warnings.filterwarnings('ignore')
@@ -740,7 +738,7 @@ home = html.Div([
                         html.H4("State Percent Positive: ",style={"display":"inline-block"}),
                         dcc.Input(id='state_stat', value='', type='text',style={"display":"inline-block","width":"40%","text-align":"center"},readOnly=True),
                         html.Br(),
-                        html.P("The percent positive is the percentage of all coronavirus tests performed that come back positive in relation to total tests conducted that day. If the number of total tests remains too low or " +
+                        html.P("This percent positive statistic is the average percentage of all coronavirus tests performed that come back positive in the past 14 days. If the number of total tests remains too low or " +
                         "if the number of positive results remains too high for your state, then the percent positive will be high. " +
                         "A high percent positive value can indicate high transmission within the population or that there are more people with COVID-19 that have not been tested yet.",style={"display":"inline"}),
                         html.Br(),
@@ -1129,7 +1127,7 @@ def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown
     interval_data.dropna(inplace=True)
     interval_data = interval_data.values
     for i in range(0,len(interval_data)):
-        ranges = str(interval_data[i]).strip().split("-")
+        ranges = str(interval_data[i]).strip().split(">")
         low = float(ranges[0])
         high = float(ranges[1])
         if behaviour >= low and behaviour < high:
@@ -1142,8 +1140,8 @@ def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown
 
     age_data = master['age group (years)'].values
     for i in range(0,len(age_data)):
-        if "-" in str(age_data[i]):
-            num = age_data[i].strip().split("-")
+        if ">" in str(age_data[i]):
+            num = age_data[i].strip().split(">")
             fnum = int(num[0])
             snum = int(num[1])
             if(age >= fnum and age < snum):
