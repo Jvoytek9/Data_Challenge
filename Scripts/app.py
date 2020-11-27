@@ -170,6 +170,15 @@ graph = dbc.Row([
                     html.Hr(),
 
                     html.Div(
+                        dcc.RadioItems(
+                            id='normalize2',
+                            options=[{'label': i, 'value': i} for i in ['No Normalize','Normalize']],
+                            value='No Normalize',
+                            labelStyle={"padding-right":"10px","margin":"auto","padding-bottom":"10px"}
+                        )
+                    ,style={"margin":"auto"}),
+
+                    html.Div(
                         dcc.Checklist(
                             id = 'bestfit2',
                             options= [{'label': i, 'value': i} for i in ['Scatter','Poly-Fit','Log-Fit','Exp-Fit', 'Power-Fit']],
@@ -271,6 +280,15 @@ graph = dbc.Row([
             style={'text-align':"center", "margin-right":"auto","margin-left":"auto", 'color':"white","width": "80%","padding-top":"15%"}),
 
         html.Div([
+            html.Div(
+                dcc.RadioItems(
+                    id='addComp',
+                    options=[{'label': i, 'value': i} for i in ['No Compare','Compare']],
+                    value='No Compare',
+                    labelStyle={"padding-right":"10px","margin":"auto","padding-bottom":"10px","color":"white"}
+                )
+            ,style={"margin":"auto"}),
+
             dbc.Row([
                 dbc.Col(html.H6("X: "),style={"margin":"auto","width":"10%","height":"100%"}),
                 html.Div(dcc.Dropdown(id="select-xaxis", placeholder = "Select x-axis", value = "timeWeeks",
@@ -304,9 +322,9 @@ graph = dbc.Row([
 
                     html.Div(
                         dcc.RadioItems(
-                            id='addComp',
-                            options=[{'label': i, 'value': i} for i in ['No Compare','Compare']],
-                            value='No Compare',
+                            id='normalize',
+                            options=[{'label': i, 'value': i} for i in ['No Normalize','Normalize']],
+                            value='No Normalize',
                             labelStyle={"padding-right":"10px","margin":"auto","padding-bottom":"10px"}
                         )
                     ,style={"margin":"auto"}),
@@ -1197,13 +1215,14 @@ def update_master_table_styles(x,y):
     [Input("select-xaxis", "value"),
      Input("select-yaxis", "value"),
      Input('addComp', 'value'),
+     Input('normalize', 'value'),
      Input("bestfit", "value"),
      Input("input_fit", "value"),
      Input('gasses', 'value'),
      Input('surfactants', 'value'),
      Input('sconc', 'value')],
 )
-def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
+def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur, surc):
     cl = dv[(dv['timeWeeks'] >= ga[0]) & (dv['timeWeeks'] <= ga[1])]
 
     codes = []
@@ -1228,6 +1247,18 @@ def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
             if len(name_array[selected_x]) > 2:
                 x = np.array(name_array[selected_x])
                 y = np.array(name_array[selected_y])
+                if normalize == "Normalize":
+                    if max(x) == min(x):
+                        x = np.full_like(x, 0.5)
+                    else:
+                        x = (x-min(x))/(max(x)-min(x))
+                    x[x == 0] = 0.001
+                    
+                    if max(y) == min(y):
+                        y = np.full_like(y, 0.5)
+                    else:
+                        y = (y-min(y))/(max(y)-min(y))
+                    y[y == 0] = 0.001
             else:
                 continue
         else:
@@ -1407,13 +1438,14 @@ def update_comp1_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
     [Input("select-xaxis2", "value"),
      Input("select-yaxis2", "value"),
      Input('addComp', 'value'),
+     Input('normalize2', 'value'),
      Input("bestfit2", "value"),
      Input("input_fit2", "value"),
      Input('gasses2', 'value'),
      Input('surfactants2', 'value'),
      Input('sconc2', 'value')],
 )
-def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
+def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur, surc):
     if comp == "No Compare":
         return [{},[],[]]
 
@@ -1441,6 +1473,18 @@ def update_comp2_2D(selected_x, selected_y, comp, fit, order, ga, sur, surc):
             if len(name_array[selected_x]) > 2:
                 x = np.array(name_array[selected_x])
                 y = np.array(name_array[selected_y])
+                if normalize == "Normalize":
+                    if max(x) == min(x):
+                        x = np.full_like(x, 0.5)
+                    else:
+                        x = (x-min(x))/(max(x)-min(x))
+                    x[x == 0] = 0.001
+                    
+                    if max(y) == min(y):
+                        y = np.full_like(y, 0.5)
+                    else:
+                        y = (y-min(y))/(max(y)-min(y))
+                    y[y == 0] = 0.001
             else:
                 continue
         else:
