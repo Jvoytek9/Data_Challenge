@@ -1289,23 +1289,23 @@ def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
 
             f_new = []
             for num in f:
-                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                if np.absolute(num) <= 0.000999 or np.absolute(num) > np.power(10,4):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
 
             if order == 1:
-                equation = "y = " + str(f_new[1]) + "x + " + str(f_new[0])
+                equation = "y = {a}x + {b}".format(a=f_new[0],b=f_new[1])
                 residuals = y- y_res
                 ss_res = np.sum(residuals**2)
                 ss_tot = np.sum((y-np.mean(y))**2)
                 r_squared = str(np.round(1 - (ss_res / ss_tot),3))
 
             elif order == 2:
-                equation = "y = " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
+                equation = "y = {a}x² + {b}x + {c}".format(a=f_new[0],b=f_new[1],c=f_new[2])
                 r_squared = "Non-Linear"
             elif order == 3:
-                equation = "y = " + str(f_new[3]) + "x³ + " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
+                equation = "y = {a}x³ + {b}x² + {c}x + {d}".format(a=f_new[0],b=f_new[1],c=f_new[2],d=f_new[3])
                 r_squared = "Non-Linear"
 
             trace = go.Scattergl(x = x_new, y = y_new,
@@ -1333,14 +1333,15 @@ def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
 
             f_new = []
             for num in popt:
-                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                if np.absolute(num) <= 0.000999 or np.absolute(num) > np.power(10,4):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
 
             trace = go.Scattergl(x = x_new, y = y_new,
             hovertext= "State: " + i
-            + "<br />y = " + str(f_new[0]) + " * log(" + str(f_new[1]) + " * x) + " + str(f_new[2]),
+            + "<br />" + 
+            "y = {a} * log({b} * x) + {c}".format(a=f_new[0],b=f_new[1],c=f_new[2]),
             hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
             name=i,showlegend=showLegend,legendgroup=i)
 
@@ -1362,14 +1363,15 @@ def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
 
             f_new = []
             for num in popt:
-                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                if np.absolute(num) <= 0.000999 or np.absolute(num) > np.power(10,4):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
 
             trace = go.Scattergl(x = x_new, y = y_new,
             hovertext= "State: " + i
-            + "<br />y = " + str(f_new[0]) + " * e^(" + str(f_new[1]) + " * x) + " + str(f_new[2]),
+            + "<br />" + 
+            "y = {a} * e<sup>({b} * x)</sup> + {c}".format(a=f_new[0],b=f_new[1],c=f_new[2]),
             hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
             name=i,showlegend=showLegend,legendgroup=i)
 
@@ -1391,14 +1393,15 @@ def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
 
             f_new = []
             for num in popt:
-                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                if np.absolute(num) <= 0.000999 or np.absolute(num) > np.power(10,4):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
 
             trace = go.Scattergl(x = x_new, y = y_new,
             hovertext= "State: " + i
-            + "<br />y = " + str(f_new[0]) + " * x^(" + str(f_new[1]) + ") + " + str(f_new[2]),
+            + "<br />" + 
+            "y = {a} * x<sup>{N}</sup> + {c}".format(a=f_new[0],N=f_new[1],c=f_new[2]),
             hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
             name=i,showlegend=showLegend,legendgroup=i)
 
@@ -1515,23 +1518,23 @@ def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
 
             f_new = []
             for num in f:
-                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                if np.absolute(num) <= 0.000999 or np.absolute(num) > np.power(10,4):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
 
             if order == 1:
-                equation = "y = " + str(f_new[1]) + "x + " + str(f_new[0])
+                equation = "y = {a}x + {b}".format(a=f_new[0],b=f_new[1])
                 residuals = y- y_res
                 ss_res = np.sum(residuals**2)
                 ss_tot = np.sum((y-np.mean(y))**2)
                 r_squared = str(np.round(1 - (ss_res / ss_tot),3))
 
             elif order == 2:
-                equation = "y = " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
+                equation = "y = {a}x² + {b}x + {c}".format(a=f_new[0],b=f_new[1],c=f_new[2])
                 r_squared = "Non-Linear"
             elif order == 3:
-                equation = "y = " + str(f_new[3]) + "x³ + " + str(f_new[2]) + "x² + " + str(f_new[1]) + "x + " + str(f_new[0])
+                equation = "y = {a}x³ + {b}x² + {c}x + {d}".format(a=f_new[0],b=f_new[1],c=f_new[2],d=f_new[3])
                 r_squared = "Non-Linear"
 
             trace = go.Scattergl(x = x_new, y = y_new,
@@ -1559,14 +1562,15 @@ def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
 
             f_new = []
             for num in popt:
-                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                if np.absolute(num) <= 0.000999 or np.absolute(num) > np.power(10,4):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
 
             trace = go.Scattergl(x = x_new, y = y_new,
             hovertext= "State: " + i
-            + "<br />y = " + str(f_new[0]) + " * log(" + str(f_new[1]) + " * x) + " + str(f_new[2]),
+            + "<br />" + 
+            "y = {a} * log({b} * x) + {c}".format(a=f_new[0],b=f_new[1],c=f_new[2]),
             hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
             name=i,showlegend=showLegend,legendgroup=i)
 
@@ -1588,14 +1592,15 @@ def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
 
             f_new = []
             for num in popt:
-                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                if np.absolute(num) <= 0.000999 or np.absolute(num) > np.power(10,4):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
 
             trace = go.Scattergl(x = x_new, y = y_new,
             hovertext= "State: " + i
-            + "<br />y = " + str(f_new[0]) + " * e^(" + str(f_new[1]) + " * x) + " + str(f_new[2]),
+            + "<br />" + 
+            "y = {a} * e<sup>({b} * x)</sup> + {c}".format(a=f_new[0],b=f_new[1],c=f_new[2]),
             hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
             name=i,showlegend=showLegend,legendgroup=i)
 
@@ -1617,14 +1622,15 @@ def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
 
             f_new = []
             for num in popt:
-                if np.absolute(num) < 10**(1/4) or np.absolute(num) > np.power(10,3):
+                if np.absolute(num) <= 0.000999 or np.absolute(num) > np.power(10,4):
                     f_new.append(format(num,'.3e'))
                 else:
                     f_new.append(np.round(num,3))
 
             trace = go.Scattergl(x = x_new, y = y_new,
             hovertext= "State: " + i
-            + "<br />y = " + str(f_new[0]) + " * x^(" + str(f_new[1]) + ") + " + str(f_new[2]),
+            + "<br />" + 
+            "y = {a} * x<sup>{N}</sup> + {c}".format(a=f_new[0],N=f_new[1],c=f_new[2]),
             hoverinfo='text',mode='lines', line={'color' : name_array.Color.values[0]},
             name=i,showlegend=showLegend,legendgroup=i)
 
