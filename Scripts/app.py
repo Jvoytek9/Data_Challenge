@@ -170,10 +170,10 @@ graph = dbc.Row([
                     html.Hr(),
 
                     html.Div(
-                        dcc.RadioItems(
+                        dcc.Checklist(
                             id='normalize2',
-                            options=[{'label': i, 'value': i} for i in ['No Normalize','Normalize']],
-                            value='No Normalize',
+                            options=[{'label': i, 'value': i} for i in ['Normalize X','Normalize Y']],
+                            value=[],
                             labelStyle={"padding-right":"10px","margin":"auto","padding-bottom":"10px"}
                         )
                     ,style={"margin":"auto"}),
@@ -321,10 +321,10 @@ graph = dbc.Row([
                     html.Hr(),
 
                     html.Div(
-                        dcc.RadioItems(
+                        dcc.Checklist(
                             id='normalize',
-                            options=[{'label': i, 'value': i} for i in ['No Normalize','Normalize']],
-                            value='No Normalize',
+                            options=[{'label': i, 'value': i} for i in ['Normalize X','Normalize Y']],
+                            value=[],
                             labelStyle={"padding-right":"10px","margin":"auto","padding-bottom":"10px"}
                         )
                     ,style={"margin":"auto"}),
@@ -1247,13 +1247,14 @@ def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
             if len(name_array[selected_x]) > 2:
                 x = np.array(name_array[selected_x])
                 y = np.array(name_array[selected_y])
-                if normalize == "Normalize":
+                if "Normalize X" in normalize:
                     if max(x) == min(x):
                         x = np.full_like(x, 0.5)
                     else:
                         x = (x-min(x))/(max(x)-min(x))
                     x[x == 0] = 0.001
-                    
+                
+                if "Normalize Y" in normalize:
                     if max(y) == min(y):
                         y = np.full_like(y, 0.5)
                     else:
@@ -1476,13 +1477,14 @@ def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur
             if len(name_array[selected_x]) > 2:
                 x = np.array(name_array[selected_x])
                 y = np.array(name_array[selected_y])
-                if normalize == "Normalize":
+                if "Normalize X" in normalize:
                     if max(x) == min(x):
                         x = np.full_like(x, 0.5)
                     else:
                         x = (x-min(x))/(max(x)-min(x))
                     x[x == 0] = 0.001
-                    
+                
+                if "Normalize Y" in normalize:
                     if max(y) == min(y):
                         y = np.full_like(y, 0.5)
                     else:
