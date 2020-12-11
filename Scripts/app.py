@@ -71,11 +71,12 @@ dv[['date', 'state', 'dataQualityGrade']] = dv[['date', 'state', 'dataQualityGra
 
 dv['timeWeeks'] = (pd.Timestamp.now().normalize() - pd.to_datetime(dv['date'])) / np.timedelta64(1, 'D')
 dv['timeWeeks'] /= 7
-max_time = dv['timeWeeks'].iat[-1]
+dv['timeWeeks'] = dv['timeWeeks'].values[::-1]
+max_time = dv['timeWeeks'].iat[0]
 max_time = math.ceil(max_time)
 interval = int(math.ceil(max_time/10))
 
-intervals = []
+intervals = [0]
 for i in range(1,interval+1):
     intervals.append(i*10)
 
@@ -928,7 +929,7 @@ home = html.Div([
                     html.Div([
                         html.A("Here", href="https://covidtracking.com/about-data/data-definitions", style={"display":"inline-block"}),
                         html.P("is a link which defines each of the variables used in this dashboard.", style={"margin-left": "5px","display":"inline-block"}),
-                        html.P("We added a variable, timeWeeks, which is the time-elapsed(units:weeks) from when the data was recorded to today. All data displayed in this site taken from the Covid Tracking Project.", style={"display":"inline-block"})
+                        html.P("We added a variable, timeWeeks, which is the time-elapsed(units:weeks) from when the COVID track project started recording data to  today. All data displayed in this site taken from the Covid Tracking Project.", style={"display":"inline-block"})
                     ],style={"font-size":23,"padding-left":30,"padding-right":30,"text-align":"center"})
                 ])
             ]),
@@ -1107,7 +1108,6 @@ def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown
     if state is None or county is None or race is None or sex is None or med is None:
         return ["Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete",[{"id":"Form Not Yet Complete","name":"Form Not Yet Complete"}]]
 
-
     code = str(state)[str(state).find("(")+1:str(state).find(")")]
     state_data = dv.loc[(dv['state'] == code) & (dv['timeWeeks'] < 2)]
     state_data.dropna(subset=['positive', 'totalTestResults'],inplace=True)
@@ -1125,11 +1125,11 @@ def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown
     always_data = master.loc[master['COUNTYFP'] == fip]
     always = always_data["ALWAYS"].values[0]
     if always >= 0.8:
-        county_stat = "Low Community Spread"
+        county_stat = "lower risk of community spread"
     elif always >=0.5 and always < 0.8:
-        county_stat = "Risk of Community Spread"
+        county_stat = "higher risk of community spread"
     elif always < 0.5:
-        county_stat = "Risk of Pronounced Community Spread"
+        county_stat = "most pronounced community spread"
     else:
         county_stat = "Invalid Data"
 
