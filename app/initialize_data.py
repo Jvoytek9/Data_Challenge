@@ -1,5 +1,4 @@
 import os
-from datetime import date
 import math
 import numpy as np
 import pandas as pd
@@ -15,7 +14,8 @@ dv=pd.read_csv('https://covidtracking.com/data/download/all-states-history.csv')
 
 dv = dv.drop('positiveScore', 1)
 dv = dv.replace({'#REF!': np.nan})
-dv[['date', 'state', 'dataQualityGrade']] = dv[['date', 'state', 'dataQualityGrade']].fillna(value="Not Defined")
+
+dv[['date', 'state']] = dv[['date', 'state']].fillna(value="Not Defined")
 
 dv['timeWeeks'] = (pd.Timestamp.now().normalize() - pd.to_datetime(dv['date'])) / np.timedelta64(1, 'D')
 dv['timeWeeks'] /= 7

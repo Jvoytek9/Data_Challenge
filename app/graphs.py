@@ -130,29 +130,6 @@ graphs_html = dbc.Row([
 
                 html.Hr(),
 
-                html.Details([
-                    html.Summary("Data Quality Rating"),
-
-                    dbc.Row([
-                        dbc.Col(
-                            dbc.Button('Select All', id='allsconc2', n_clicks=0,size="sm",block=True,outline=True,color="dark")
-                        ,style={"padding-right":"5px"}),
-
-                        dbc.Col(
-                            dbc.Button('Deselect All', id='dallsconc2', n_clicks=0,size="sm",block=True,outline=True,color="dark")
-                        ,style={"padding-left":"5px"}),
-                    ],style={"margin":"auto","padding-top":"10px","padding-left":"10px","padding-right":"10px"},no_gutters=True),
-
-                    dcc.Checklist(
-                        id = 'sconc2',
-                        options= [{'label': sc, 'value': sc} for sc in np.sort(list(dict.fromkeys(dv['dataQualityGrade'])))],
-                        value = list(dict.fromkeys(dv['dataQualityGrade'])),
-                        labelStyle={'display': 'block'}
-                    ),
-                ]),
-
-                html.Hr(),
-
                 ],style={"display":"none"}),
             ],style={"text-align":"center", "margin-left": "auto", "margin-right": "auto", "width": "80%", "backgroundColor": 'white', "border-radius":3,"position":"relative"}),
 
@@ -275,29 +252,6 @@ graphs_html = dbc.Row([
                         id = 'surfactants',
                         options= [{'label': surfactant, 'value': surfactant} for surfactant in np.sort(list(dict.fromkeys(state_codes["State"]+"("+state_codes["Code"]+")")))],
                         value = list(dict.fromkeys(state_codes["State"]+"("+state_codes["Code"]+")")),
-                        labelStyle={'display': 'block'}
-                    ),
-                ]),
-
-                html.Hr(),
-
-                html.Details([
-                    html.Summary("Data Quality Rating"),
-
-                    dbc.Row([
-                        dbc.Col(
-                            dbc.Button('Select All', id='allsconc', n_clicks=0,size="sm",block=True,outline=True,color="dark")
-                        ,style={"padding-right":"5px"}),
-
-                        dbc.Col(
-                            dbc.Button('Deselect All', id='dallsconc', n_clicks=0,size="sm",block=True,outline=True,color="dark")
-                        ,style={"padding-left":"5px"}),
-                    ],style={"margin":"auto","padding-top":"10px","padding-left":"10px","padding-right":"10px"},no_gutters=True),
-
-                    dcc.Checklist(
-                        id = 'sconc',
-                        options= [{'label': sc, 'value': sc} for sc in np.sort(list(dict.fromkeys(dv['dataQualityGrade'])))],
-                        value = list(dict.fromkeys(dv['dataQualityGrade'])),
                         labelStyle={'display': 'block'}
                     ),
                 ]),
@@ -484,40 +438,6 @@ def register_graphs_callbacks(app):
             return([surf_value])
 
     @app.callback(
-        [Output('sconc', 'value')],
-        [Input('allsconc', 'n_clicks'),
-        Input('dallsconc', 'n_clicks')],
-        [State('sconc', 'value'),
-        State('sconc', 'options')]
-    )
-    def select_deselect_all_surfconc(allsconc,dallscon,sconc_value,sconc_options):
-        changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-
-        if changed_id == 'allsconc.n_clicks':
-            return([[value['value'] for value in sconc_options]])
-        elif changed_id == 'dallsconc.n_clicks':
-            return([[]])
-        else:
-            return([sconc_value])
-
-    @app.callback(
-        [Output('sconc2', 'value')],
-        [Input('allsconc2', 'n_clicks'),
-        Input('dallsconc2', 'n_clicks')],
-        [State('sconc2', 'value'),
-        State('sconc2', 'options')]
-    )
-    def select_deselect_all_surfconc2(allsconc,dallscon,sconc_value,sconc_options):
-        changed_id = [p['prop_id'] for p in dash.callback_context.triggered][0]
-
-        if changed_id == 'allsconc2.n_clicks':
-            return([[value['value'] for value in sconc_options]])
-        elif changed_id == 'dallsconc2.n_clicks':
-            return([[]])
-        else:
-            return([sconc_value])
-
-    @app.callback(
         [Output('compare_dropdown', 'style'),
         Output('compare_graph_2D', 'style'),
         Output('compare_table_2D', 'style'),
@@ -568,19 +488,16 @@ def register_graphs_callbacks(app):
         Input("bestfit", "value"),
         Input("input_fit", "value"),
         Input('gasses', 'value'),
-        Input('surfactants', 'value'),
-        Input('sconc', 'value')],
+        Input('surfactants', 'value')],
     )
-    def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur, surc):
+    def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur):
         cl = dv[(dv['timeWeeks'] >= ga[0]) & (dv['timeWeeks'] <= ga[1])]
 
         codes = []
         for element in sur:
             code = element[element.find("(")+1:element.find(")")]
             codes.append(code)
-        ea = cl[cl["state"].isin(codes)]
-
-        cleaned = ea[ea["dataQualityGrade"].isin(surc)]
+        cleaned = cl[cl["state"].isin(codes)]
 
         data = []
         for i in names:
@@ -617,8 +534,7 @@ def register_graphs_callbacks(app):
             if('Scatter' in fit):
                 trace = go.Scattergl(x=x,y=y,
                 hovertext= "Date Recorded: " + name_array.date
-                + "<br />State: " + i
-                + "<br />Data Quality: " + name_array["dataQualityGrade"],
+                + "<br />State: " + i,
                 hoverinfo='text',mode='markers', marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
                 name=i,legendgroup=group_value)
 
@@ -795,10 +711,9 @@ def register_graphs_callbacks(app):
         Input("bestfit2", "value"),
         Input("input_fit2", "value"),
         Input('gasses2', 'value'),
-        Input('surfactants2', 'value'),
-        Input('sconc2', 'value')],
+        Input('surfactants2', 'value')],
     )
-    def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur, surc):
+    def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur):
         if comp == "No Compare":
             return [{},[],[]]
 
@@ -808,9 +723,7 @@ def register_graphs_callbacks(app):
         for element in sur:
             code = element[element.find("(")+1:element.find(")")]
             codes.append(code)
-        ea = cl[cl["state"].isin(codes)]
-
-        cleaned = ea[ea["dataQualityGrade"].isin(surc)]
+        cleaned = cl[cl["state"].isin(codes)]
 
         data = []
         for i in names:
@@ -847,8 +760,7 @@ def register_graphs_callbacks(app):
             if('Scatter' in fit):
                 trace = go.Scattergl(x=x,y=y,
                 hovertext= "Date Recorded: " + name_array.date
-                + "<br />State: " + i
-                + "<br />Data Quality: " + name_array["dataQualityGrade"],
+                + "<br />State: " + i,
                 hoverinfo='text',mode='markers', marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
                 name=i,legendgroup=group_value)
 
