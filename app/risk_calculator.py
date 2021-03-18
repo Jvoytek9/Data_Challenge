@@ -12,9 +12,13 @@ import dash_bootstrap_components as dbc
 import dash_table as dt
 import plotly.graph_objs as go
 
-from initialize_data import Return_Data, master, state_codes
+from initialize_data import Return_Data, master
 
-dv = Return_Data()
+data = Return_Data()
+dv = data[0]
+percent_positives = data[1]
+
+state_codes = dv["abbr"].values
 
 today = date.today()
 today = today.strftime("%m/%d/%Y")
@@ -43,7 +47,7 @@ risk_calculator_html = html.Div([
                         ,style={"width":"50%","margin":"auto"}),
 
                         dcc.Dropdown(id="state_input", placeholder="Select State",
-                        options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(state_codes["State"].dropna()+"("+state_codes["Code"].dropna()+")")))]
+                        options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")")))]
                         ,style={"width":"50%","margin":"auto"}),
 
                         dcc.Dropdown(id="county_input", placeholder="Select County",
@@ -238,6 +242,7 @@ risk_calculator_html = html.Div([
                         html.P("The World Health Organization (WHO) recommends the percent positive to stay at" ,style={"display":"inline","padding-right":"5px"}),
                         html.A("5% or lower for at least 14 days", href="https://coronavirus.jhu.edu/testing/testing-positivity",style={"display":"inline","padding-right":"5px"}),
                         html.P("before governments consider reopening. If your state has a percent positive higher than 5%, you should take greater precautions by minimizing unessential activities. ",style={"display":"inline","padding-right":"5px"}),
+                        html.P("THE COVID TRACKING PROJECT HAS CEASED UPDATING. It says 0 because we are switching databases. Please bear with us!"),
                         html.Br(),
 
                         html.Br(),
@@ -297,12 +302,10 @@ risk_calculator_html = html.Div([
                         html.Br(),
                         html.P("Age data was retrieved from the",style={"display":"inline","padding-right":"5px"}),
                         html.A("CDC.",href="https://www.cdc.gov/coronavirus/2019-ncov/covid-data/investigations-discovery/hospitalization-death-by-age.html",style={"display":"inline","padding-right":"5px"}),
-                        html.P("The CDC used the mortality rate for 18-29 year olds as the comparison group.",style={"display":"inline"}),
+                        html.P("The CDC used the mortality rate for 5-17 year olds as the comparison group.",style={"display":"inline"}),
                         html.Br(),
                         html.Br(),
-                        html.P("Although those who are older than 29 have higher mortality rates, the 18-29 age group continues to",style={"display":"inline","padding-right":"5px"}),
-                        html.A("hold the highest percentage of all COVID-19 cases.",href="https://covid.cdc.gov/covid-data-tracker/#demographics",style={"display":"inline","padding-right":"5px"}),
-                        html.P("This is important to note because it indicates a shared responsibility of 18-29 year olds to minimize their risk of transmitting the virus by social distancing and wearing masks. The paper,",style={"display":"inline","padding-right":"5px"}),
+                        html.P("The paper,",style={"display":"inline","padding-right":"5px"}),
                         html.A("“Why does COVID-19 disproportionately affect older people?”",href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7288963/",style={"display":"inline"}),
                         html.P(", attributes the disproportionate mortality risk to “molecular differences between young, middle-aged, and older people”.",style={"display":"inline"}),
                         html.Br(),
@@ -429,7 +432,7 @@ def register_risk_callbacks(app):
         return options
 
 
-    options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(state_codes["State"].dropna()+"("+state_codes["Code"].dropna()+")")))]
+    options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")")))]
 
     @app.callback(
         [Output("state_stat", "value"),
@@ -468,18 +471,10 @@ def register_risk_callbacks(app):
 
         if state is None or county is None or race is None or sex is None or med is None:
             return ["Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete",[],[{"id":"Form Not Yet Complete","name":"Form Not Yet Complete"}]]
-
-        code = str(state)[str(state).find("(")+1:str(state).find(")")]
-        state_data = dv.loc[(dv['state'] == code) & (dv['timeWeeks'] < 2)]
-        state_data.dropna(subset=['positive', 'totalTestResults'],inplace=True)
-        positives = state_data["positive"].values
-        totalTests = state_data["totalTestResults"].values
-        sum_dec = 0
-        for i in range(0,len(positives)):
-            sum_dec += positives[i] / totalTests[i]
-
-        state_stat = str(np.round(100 * (sum_dec) / 14,2)) + "%"
-
+        
+        state = str(state)[0:str(state).find("(")]
+        state_percent = percent_positives[percent_positives["State/Territory/Federal Entity"] == state]
+        state_stat = state_percent["Percent Positive 7 Days"].values[-1]
 
         fip_data = master.loc[master['COUNTY'] == county]
         fip = fip_data["FIPS"].values[0]

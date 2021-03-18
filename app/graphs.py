@@ -13,9 +13,13 @@ import dash_bootstrap_components as dbc
 import dash_table as dt
 import plotly.graph_objs as go
 
-from initialize_data import Return_Data, intervals, master, state_codes, names
+from initialize_data import Return_Data, master, abbreviations
+#from initialize_data import intervals
 
-dv = Return_Data()
+data = Return_Data()
+dv = data[0]
+
+state_codes = dv["abbr"].values
 
 Graph_Height = 605
 
@@ -25,15 +29,15 @@ graphs_html = dbc.Row([
             html.Div([html.H1("Graph 2")],style={'text-align':"center", "margin-left":"auto","margin-right":"auto", 'color':"white"}),
             dbc.Row([
                 dbc.Col(html.H6("X: "),style={"margin":"auto","width":"10%","height":"100%"}),
-                html.Div(dcc.Dropdown(id="select-xaxis2", placeholder = "Select x-axis", value = "timeWeeks",
-                options=[{'label': i.title(), 'value': i} for i in dv.columns[3:-1]], clearable=False),
+                html.Div(dcc.Dropdown(id="select-xaxis2", placeholder = "Select x-axis", value = "Days Elapsed",
+                options=[{'label': i.title(), 'value': i} for i in dv.columns[4:-1]], clearable=False),
                 style={"width":"90%","border":"1px solid white"}),
             ],style={"background-color":"white","border-radius":"3px","border":"1px solid #cccccc","margin-left": "auto", "margin-right": "auto", "width": "80%","height":"10%"},no_gutters=True),
 
             dbc.Row([
                 dbc.Col(html.H6("Y: "),style={"margin":"auto","width":"10%","height":"100%"}),
-                html.Div(dcc.Dropdown(id="select-yaxis2", placeholder = "Select y-axis", value = "deathIncrease",
-                options=[{'label': i.title(), 'value': i} for i in dv.columns[3:-1]], clearable=False),
+                html.Div(dcc.Dropdown(id="select-yaxis2", placeholder = "Select y-axis", value = "People with 2 Doses",
+                options=[{'label': i.title(), 'value': i} for i in dv.columns[4:-1]], clearable=False),
                 style={"width":"90%","border":"1px solid white"}),
             ],style={"background-color":"white","border-radius":"3px","border":"1px solid #cccccc","margin-left": "auto", "margin-right": "auto", "width": "80%","height":"10%"},no_gutters=True),
 
@@ -55,8 +59,8 @@ graphs_html = dbc.Row([
                     html.Div(
                         dcc.Checklist(
                             id='normalize2',
-                            options=[{'label': i, 'value': i} for i in ['Normalize X','Normalize Y']],
-                            value=[],
+                            options=[{'label': i, 'value': i} for i in ['Normalize X','Normalize Y','Aggregate Y']],
+                            value=['Normalize Y','Aggregate Y'],
                             labelStyle={"padding-right":"10px","margin":"auto","padding-bottom":"10px"}
                         )
                     ,style={"margin":"auto"}),
@@ -64,8 +68,8 @@ graphs_html = dbc.Row([
                     html.Div(
                         dcc.Checklist(
                             id = 'bestfit2',
-                            options= [{'label': i, 'value': i} for i in ['Scatter','Poly-Fit','Log-Fit','Exp-Fit', 'Power-Fit']],
-                            value = ['Scatter'],
+                            options= [{'label': i, 'value': i} for i in ['Scatter','Line','Poly-Fit','Log-Fit','Exp-Fit', 'Power-Fit']],
+                            value = ['Scatter','Line'],
                             labelStyle={"padding-right":"10px","margin":"auto"}
                         )
                     ,style={"margin":"auto"}),
@@ -89,23 +93,25 @@ graphs_html = dbc.Row([
 
                 html.Hr(),
 
-                html.Details([
-                    html.Summary("Time-Elapsed(Weeks)"),
+                # intervals mentioned in initialize data.py
+                # html.Details([
+                #     html.Summary("Time-Elapsed(Weeks)"),
 
-                    html.Div([
-                        dcc.RangeSlider(
-                            id="gasses2",
-                            max=max(intervals),
-                            min=min(intervals),
-                            value=[min(intervals),max(intervals)],
-                            step=10,
-                            included=True,
-                            marks= {i: '{}'.format(i) for i in intervals},
-                        )
-                    ],style={"padding-top":"10%"}),
-                ]),
+                #     html.Div([
+                #         dcc.RangeSlider(
+                #             id="gasses2",
+                #             max=max(intervals),
+                #             min=min(intervals),
+                #             value=[min(intervals),max(intervals)],
+                #             step=10,
+                #             included=True,
+                #             marks= {i: '{}'.format(i) for i in intervals},
+                #         )
+                #     ],style={"padding-top":"10%"}),
+                # ]),
 
-                html.Hr(),
+                # html.Hr(),
+                
 
                 html.Details([
                     html.Summary("States"),
@@ -122,8 +128,8 @@ graphs_html = dbc.Row([
 
                     dcc.Checklist(
                         id = 'surfactants2',
-                        options= [{'label': surfactant, 'value': surfactant} for surfactant in np.sort(list(dict.fromkeys(state_codes["State"]+"("+state_codes["Code"]+")")))],
-                        value = list(dict.fromkeys(state_codes["State"]+"("+state_codes["Code"]+")")),
+                        options= [{'label': surfactant, 'value': surfactant} for surfactant in np.sort(list(dict.fromkeys(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")")))],
+                        value = list(dict.fromkeys(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")")),
                         labelStyle={'display': 'block'}
                     ),
                 ]),
@@ -151,16 +157,16 @@ graphs_html = dbc.Row([
 
             dbc.Row([
                 dbc.Col(html.H6("X: "),style={"margin":"auto","width":"10%","height":"100%"}),
-                html.Div(dcc.Dropdown(id="select-xaxis", placeholder = "Select x-axis", value = "timeWeeks",
-                options=[{'label': i.title(), 'value': i} for i in dv.columns[3:-1]], clearable=False),
+                html.Div(dcc.Dropdown(id="select-xaxis", placeholder = "Select x-axis", value = "Days Elapsed",
+                options=[{'label': i.title(), 'value': i} for i in dv.columns[4:-1]], clearable=False),
                 style={"width":"90%","border":"1px solid white"}),
             ],style={"background-color":"white","border-radius":"3px","border":"1px solid #cccccc","margin-left": "auto", "margin-right": "auto", "width": "80%","height":"10%"},no_gutters=True),
 
 
             dbc.Row([
                 dbc.Col(html.H6("Y: "),style={"margin":"auto","width":"10%","height":"100%"}),
-                html.Div(dcc.Dropdown(id="select-yaxis", placeholder = "Select y-axis", value = "positiveIncrease",
-                options=[{'label': i.title(), 'value': i} for i in dv.columns[3:-1]], clearable=False),
+                html.Div(dcc.Dropdown(id="select-yaxis", placeholder = "Select y-axis", value = "Confirmed Cases",
+                options=[{'label': i.title(), 'value': i} for i in dv.columns[4:-1]], clearable=False),
                 style={"width":"90%","border":"1px solid white"}),
             ],style={"background-color":"white","border-radius":"3px","border":"1px solid #cccccc","margin-left": "auto", "margin-right": "auto", "width": "80%","height":"10%"},no_gutters=True),
 
@@ -183,8 +189,8 @@ graphs_html = dbc.Row([
                     html.Div(
                         dcc.Checklist(
                             id='normalize',
-                            options=[{'label': i, 'value': i} for i in ['Normalize X','Normalize Y']],
-                            value=[],
+                            options=[{'label': i, 'value': i} for i in ['Normalize X','Normalize Y','Aggregate Y']],
+                            value=['Normalize Y','Aggregate Y'],
                             labelStyle={"padding-right":"10px","margin":"auto","padding-bottom":"10px"}
                         )
                     ,style={"margin":"auto"}),
@@ -192,8 +198,8 @@ graphs_html = dbc.Row([
                     html.Div(
                         dcc.Checklist(
                             id = 'bestfit',
-                            options= [{'label': i, 'value': i} for i in ['Scatter','Poly-Fit','Log-Fit','Exp-Fit', 'Power-Fit']],
-                            value = ['Scatter'],
+                            options= [{'label': i, 'value': i} for i in ['Scatter','Line','Poly-Fit','Log-Fit','Exp-Fit', 'Power-Fit']],
+                            value = ['Scatter','Line'],
                             labelStyle={"padding-right":"10px","margin":"auto"}
                         )
                     ,style={"margin":"auto"}),
@@ -216,24 +222,24 @@ graphs_html = dbc.Row([
                     ]),
 
                 html.Hr(),
+                
+                # html.Details([
+                #     html.Summary("Time-Elapsed(Weeks)"),
 
-                html.Details([
-                    html.Summary("Time-Elapsed(Weeks)"),
+                #     html.Div([
+                #         dcc.RangeSlider(
+                #             id="gasses",
+                #             max=max(intervals),
+                #             min=min(intervals),
+                #             value=[min(intervals),max(intervals)],
+                #             step=10,
+                #             included=True,
+                #             marks= {i: '{}'.format(i) for i in intervals},
+                #         )
+                #     ],style={"padding-top":"10%"}),
+                # ]),
 
-                    html.Div([
-                        dcc.RangeSlider(
-                            id="gasses",
-                            max=max(intervals),
-                            min=min(intervals),
-                            value=[min(intervals),max(intervals)],
-                            step=10,
-                            included=True,
-                            marks= {i: '{}'.format(i) for i in intervals},
-                        )
-                    ],style={"padding-top":"10%"}),
-                ]),
-
-                html.Hr(),
+                # html.Hr(),
 
                 html.Details([
                     html.Summary("States"),
@@ -250,8 +256,8 @@ graphs_html = dbc.Row([
 
                     dcc.Checklist(
                         id = 'surfactants',
-                        options= [{'label': surfactant, 'value': surfactant} for surfactant in np.sort(list(dict.fromkeys(state_codes["State"]+"("+state_codes["Code"]+")")))],
-                        value = list(dict.fromkeys(state_codes["State"]+"("+state_codes["Code"]+")")),
+                        options= [{'label': surfactant, 'value': surfactant} for surfactant in np.sort(list(dict.fromkeys(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")")))],
+                        value = list(dict.fromkeys(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")")),
                         labelStyle={'display': 'block'}
                     ),
                 ]),
@@ -326,7 +332,7 @@ graphs_html = dbc.Row([
                             id='comp2_2D_table',
                             page_current=0,
                             page_size=75,
-                            columns=[{'id': c, 'name': c} for c in dv.columns[3:-1]],
+                            columns=[{'id': c, 'name': c} for c in dv.columns[1:-1]],
                             export_format='xlsx',
                             style_data_conditional=[
                             {
@@ -437,6 +443,7 @@ def register_graphs_callbacks(app):
         else:
             return([surf_value])
 
+
     @app.callback(
         [Output('compare_dropdown', 'style'),
         Output('compare_graph_2D', 'style'),
@@ -487,42 +494,52 @@ def register_graphs_callbacks(app):
         Input('normalize', 'value'),
         Input("bestfit", "value"),
         Input("input_fit", "value"),
-        Input('gasses', 'value'),
         Input('surfactants', 'value')],
     )
-    def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur):
-        cl = dv[(dv['timeWeeks'] >= ga[0]) & (dv['timeWeeks'] <= ga[1])]
+    def update_comp1_2D(selected_x, selected_y, comp, normalize, fit, order, sur):
+        #cl = dv[(dv['timeWeeks'] >= ga[0]) & (dv['timeWeeks'] <= ga[1])]
 
         codes = []
         for element in sur:
             code = element[element.find("(")+1:element.find(")")]
             codes.append(code)
-        cleaned = cl[cl["state"].isin(codes)]
+        cleaned = dv[dv.abbr.isin(codes)]
 
         data = []
-        for i in names:
-            name_array = cleaned[cleaned.state == i]
+        for i in abbreviations:
+            name_array = cleaned[cleaned.abbr == i]
 
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-                group_value = str(name_array.state.values[0])
-
+            if len(name_array[selected_x].values) > 2 and len(name_array[selected_y].values) > 2 and not (name_array[selected_x] == 0).all() and not (name_array[selected_y] == 0).all():
+                
                 name_array = name_array.dropna(subset=[selected_x, selected_y],axis="rows")
                 name_array.reset_index(drop=True)
                 name_array.sort_values(by=selected_x, inplace=True)
 
-                if len(name_array[selected_x]) > 2:
+                if('Aggregate Y' in normalize):
+                    cats = np.unique(name_array[selected_x].values)
+                    for j in cats:
+                        rows_cat = name_array[name_array[selected_x] == j]
+                        first_row = rows_cat.iloc[[0],:]
+
+                        avg = rows_cat[selected_y].mean()
+                        first_row[selected_y] = avg
+
+                        name_array = name_array[name_array[selected_x] != j]
+                        name_array = name_array.append(first_row,ignore_index=True)
+
+                if len(name_array[selected_x]) >= 1:
                     x = np.array(name_array[selected_x])
                     y = np.array(name_array[selected_y])
                     if "Normalize X" in normalize:
                         if max(x) == min(x):
-                            x = np.full_like(x, 0.5)
+                            continue
                         else:
                             x = (x-min(x))/(max(x)-min(x))
                         x[x == 0] = 0.001
 
                     if "Normalize Y" in normalize:
                         if max(y) == min(y):
-                            y = np.full_like(y, 0.5)
+                            continue
                         else:
                             y = (y-min(y))/(max(y)-min(y))
                         y[y == 0] = 0.001
@@ -532,13 +549,28 @@ def register_graphs_callbacks(app):
                 continue
 
             if('Scatter' in fit):
-                trace = go.Scattergl(x=x,y=y,
-                hovertext= "Date Recorded: " + name_array.date
-                + "<br />State: " + i,
-                hoverinfo='text',mode='markers', marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
-                name=i,legendgroup=group_value)
+                if('Line' in fit):
+                    trace = go.Scattergl(x=x,y=y,
+                    hovertemplate= "Date Recorded: " + name_array.date
+                    + "<br />State: " + name_array["State/Territory/Federal Entity"],
+                    mode='lines+markers', line={'color' : name_array.Color.values[0]}, marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
+                    name=i,legendgroup=i)
 
-                data.append(trace)
+                else:
+                    trace = go.Scattergl(x=x,y=y,
+                    hovertemplate= "Date Recorded: " + name_array.date
+                    + "<br />State: " + name_array["State/Territory/Federal Entity"],
+                    mode='markers', marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
+                    name=i,legendgroup=i)
+
+            elif('Line' in fit):
+                trace = go.Scattergl(x=x,y=y,
+                hovertemplate= "Date Recorded: " + name_array.date
+                + "<br />State: " + name_array["State/Territory/Federal Entity"],
+                mode='lines', line={'color' : name_array.Color.values[0]},
+                name=i,legendgroup=i)
+
+            data.append(trace)
 
             if('Poly-Fit' in fit):
                 if('Scatter' in fit):
@@ -674,7 +706,7 @@ def register_graphs_callbacks(app):
                 data.append(trace)
 
         cleaned.dropna(subset=[selected_x, selected_y],axis="rows", inplace=True)
-        cleaned = cleaned[[selected_x,selected_y]]
+        cleaned = cleaned[["date","State/Territory/Federal Entity",selected_x,selected_y]]
 
         return [{
             'data': data,
@@ -710,45 +742,55 @@ def register_graphs_callbacks(app):
         Input('normalize2', 'value'),
         Input("bestfit2", "value"),
         Input("input_fit2", "value"),
-        Input('gasses2', 'value'),
         Input('surfactants2', 'value')],
     )
-    def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, ga, sur):
+    def update_comp2_2D(selected_x, selected_y, comp, normalize, fit, order, sur):
         if comp == "No Compare":
             return [{},[],[]]
 
-        cl = dv[(dv['timeWeeks'] >= ga[0]) & (dv['timeWeeks'] <= ga[1])]
+        #cl = dv[(dv['timeWeeks'] >= ga[0]) & (dv['timeWeeks'] <= ga[1])]
 
         codes = []
         for element in sur:
             code = element[element.find("(")+1:element.find(")")]
             codes.append(code)
-        cleaned = cl[cl["state"].isin(codes)]
+        cleaned = dv[dv.abbr.isin(codes)]
 
         data = []
-        for i in names:
-            name_array = cleaned[cleaned.state == i]
+        for i in abbreviations:
+            name_array = cleaned[cleaned.abbr == i]
 
-            if len(name_array[selected_x].values) != 0 and len(name_array[selected_y].values) != 0:
-                group_value = str(name_array.state.values[0])
-
+            if len(name_array[selected_x].values) > 2 and len(name_array[selected_y].values) > 2 and not (name_array[selected_x] == 0).all() and not (name_array[selected_y] == 0).all():
+                
                 name_array = name_array.dropna(subset=[selected_x, selected_y],axis="rows")
                 name_array.reset_index(drop=True)
                 name_array.sort_values(by=selected_x, inplace=True)
 
-                if len(name_array[selected_x]) > 2:
+                if('Aggregate Y' in normalize):
+                    cats = np.unique(name_array[selected_x].values)
+                    for j in cats:
+                        rows_cat = name_array[name_array[selected_x] == j]
+                        first_row = rows_cat.iloc[[0],:]
+
+                        avg = rows_cat[selected_y].mean()
+                        first_row[selected_y] = avg
+
+                        name_array = name_array[name_array[selected_x] != j]
+                        name_array = name_array.append(first_row,ignore_index=True)
+
+                if len(name_array[selected_x]) >= 1:
                     x = np.array(name_array[selected_x])
                     y = np.array(name_array[selected_y])
                     if "Normalize X" in normalize:
                         if max(x) == min(x):
-                            x = np.full_like(x, 0.5)
+                            continue
                         else:
                             x = (x-min(x))/(max(x)-min(x))
                         x[x == 0] = 0.001
 
                     if "Normalize Y" in normalize:
                         if max(y) == min(y):
-                            y = np.full_like(y, 0.5)
+                            continue
                         else:
                             y = (y-min(y))/(max(y)-min(y))
                         y[y == 0] = 0.001
@@ -758,13 +800,28 @@ def register_graphs_callbacks(app):
                 continue
 
             if('Scatter' in fit):
-                trace = go.Scattergl(x=x,y=y,
-                hovertext= "Date Recorded: " + name_array.date
-                + "<br />State: " + i,
-                hoverinfo='text',mode='markers', marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
-                name=i,legendgroup=group_value)
+                if('Line' in fit):
+                    trace = go.Scattergl(x=x,y=y,
+                    hovertemplate= "Date Recorded: " + name_array.date
+                    + "<br />State: " + name_array["State/Territory/Federal Entity"],
+                    mode='lines+markers', line={'color' : name_array.Color.values[0]}, marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
+                    name=i,legendgroup=i)
 
-                data.append(trace)
+                else:
+                    trace = go.Scattergl(x=x,y=y,
+                    hovertemplate= "Date Recorded: " + name_array.date
+                    + "<br />State: " + name_array["State/Territory/Federal Entity"],
+                    mode='markers', marker={'size': 10, 'opacity': 0.8, 'color' : name_array.Color},
+                    name=i,legendgroup=i)
+
+            elif('Line' in fit):
+                trace = go.Scattergl(x=x,y=y,
+                hovertemplate= "Date Recorded: " + name_array.date
+                + "<br />State: " + name_array["State/Territory/Federal Entity"],
+                mode='lines', line={'color' : name_array.Color.values[0]},
+                name=i,legendgroup=i)
+
+            data.append(trace)
 
             if('Poly-Fit' in fit):
                 if('Scatter' in fit):
@@ -900,7 +957,7 @@ def register_graphs_callbacks(app):
                 data.append(trace)
 
         cleaned.dropna(subset=[selected_x, selected_y],axis="rows", inplace=True)
-        cleaned = cleaned[[selected_x,selected_y]]
+        cleaned = cleaned[["date","State/Territory/Federal Entity",selected_x,selected_y]]
 
         return [{
             'data': data,

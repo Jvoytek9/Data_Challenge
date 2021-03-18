@@ -1,11 +1,13 @@
 import os
-from datetime import date
-import pandas as pd
 import math
+import requests
+
+import pandas as pd
 import numpy as np
 np.warnings.filterwarnings('ignore')
 from scipy.optimize import curve_fit
 #pylint: disable=unbalanced-tuple-unpacking
+
 import dash
 from dash.dependencies import Input, Output, State
 import dash_core_components as dcc
