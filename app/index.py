@@ -15,6 +15,7 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 import dash_table as dt
 import plotly.graph_objs as go
+from plotly.subplots import make_subplots
 
 from risk_calculator import Create_Calculator, register_risk_callbacks
 from graphs import Create_Graphs, register_graphs_callbacks
@@ -34,8 +35,7 @@ app = dash.Dash(__name__,
                     {
                         'name' : 'description',
                         'property' : 'og:description',
-                        'content' : 'Compilation of modern Surfactant/Foam Literature for applications in waterless geothermal fracking. ' +
-                        'Built with the concept of being added to easily.'
+                        'content' : 'Compilation of Covid-19 data for ease of visualization. '
                     },
                     {
                         'name' : 'image',
@@ -45,7 +45,7 @@ app = dash.Dash(__name__,
                     {
                         'name' : 'keywords',
                         'property' : 'og:keywords',
-                        'content' : 'Python, Plotly, Dash, Waterless, Geothermal, Fracking'
+                        'content' : 'Python, Plotly, Dash, Covid-19, Coronavirus, Pandemic'
                     }
                 ]
             )
@@ -55,7 +55,7 @@ register_graphs_callbacks(app)
 
 server = app.server
 app.config.suppress_callback_exceptions = True
-app.title = "COVID19 Tracker"
+app.title = "Kassandra Database"
 
 app.layout = html.Div([
     dcc.Location(id='url', refresh=False),

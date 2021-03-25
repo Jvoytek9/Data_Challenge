@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 import numpy as np
 import pandas as pd
 np.warnings.filterwarnings('ignore')
@@ -14,14 +14,9 @@ import plotly.graph_objs as go
 
 from initialize_data import Return_Data, master
 
-data = Return_Data()
-dv = data[0]
-percent_positives = data[1]
-
+dv = Return_Data()
 state_codes = dv["abbr"].values
-
-today = date.today()
-today = today.strftime("%m/%d/%Y")
+dv = dv[["date", "State/Territory/Federal Entity","Cases Last 7 Days","Tests Last 7 Days"]]
 
 risk_calculator_html = html.Div([
     dbc.Row([
@@ -43,15 +38,15 @@ risk_calculator_html = html.Div([
                         dcc.Input(id="age_input", type="number", placeholder="Enter Age", min=0, debounce=True,style={"text-align":"center","width":"25%"}),
 
                         dcc.Dropdown(id="race_input", placeholder="Select Race",
-                        options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(master["RACE"].dropna())))]
+                        options= [{'label': i, 'value': i} for i in np.sort(np.unique(master["RACE"].dropna()))]
                         ,style={"width":"50%","margin":"auto"}),
 
                         dcc.Dropdown(id="state_input", placeholder="Select State",
-                        options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")")))]
+                        options= [{'label': i, 'value': i} for i in np.sort(np.unique(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")"))]
                         ,style={"width":"50%","margin":"auto"}),
 
                         dcc.Dropdown(id="county_input", placeholder="Select County",
-                        options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(master["COUNTY"].dropna())))]
+                        options= [{'label': i, 'value': i} for i in np.sort(np.unique(master["COUNTY"].dropna()))]
                         ,style={"width":"50%","margin":"auto"}),
 
                         html.Br(),
@@ -406,7 +401,7 @@ risk_calculator_html = html.Div([
                         html.Div([
                             html.A("Here", href="https://covidtracking.com/about-data/data-definitions", style={"display":"inline-block"}),
                             html.P("is a link which defines each of the variables used in this dashboard.", style={"margin-left": "5px","display":"inline-block"}),
-                            html.P("We added a variable, timeWeeks, which is the time-elapsed(units:weeks) from when the COVID track project started recording data to  today. All data displayed in this site taken from the Covid Tracking Project.", style={"display":"inline-block"})
+                            html.P("We added a variable, timeWeeks, which is the time-elapsed(units:weeks) from when the COVID track project started recording data to today. All data displayed in this site taken from the Covid Tracking Project.", style={"display":"inline-block"})
                         ],style={"font-size":23,"padding-left":30,"padding-right":30,"text-align":"center"})
                     ],style={'height':'100vh'})
                 ])
@@ -431,8 +426,7 @@ def register_risk_callbacks(app):
         options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(counties)))]
         return options
 
-
-    options= [{'label': i, 'value': i} for i in np.sort(list(dict.fromkeys(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")")))]
+    options= [{'label': i, 'value': i} for i in np.sort(np.unique(dv["State/Territory/Federal Entity"] + "(" + state_codes + ")"))]
 
     @app.callback(
         [Output("state_stat", "value"),
@@ -468,70 +462,102 @@ def register_risk_callbacks(app):
         Input("bar_input", "value")]
     )
     def risk_analysis(sex,race,age,state,county,med,takeout,walk,lib,eatOut,walkTown,BBQ,beach,mall,grandpa,pool,barber,eatIn,plane,buffet,gym,bar):
-
-        if state is None or county is None or race is None or sex is None or med is None:
-            return ["Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete","Form Not Yet Complete",[],[{"id":"Form Not Yet Complete","name":"Form Not Yet Complete"}]]
-        
         state = str(state)[0:str(state).find("(")]
-        state_percent = percent_positives[percent_positives["State/Territory/Federal Entity"] == state]
-        state_stat = state_percent["Percent Positive 7 Days"].values[-1]
+        state_percents = dv[["date", "State/Territory/Federal Entity", "Cases Last 7 Days", "Tests Last 7 Days"]]
+        state_percents = state_percents[state_percents['State/Territory/Federal Entity'] == state].dropna().reset_index(drop=True)
+        
+        one_week_ago = date.today() - timedelta(weeks=1)
+        formatted_one_week = one_week_ago.strftime("%Y-%m-%d")
+        
+        if(state_percents['date'].empty):
+            state_stat = "Not enough data"
+        else:
+            if state_percents['date'].str.contains(formatted_one_week).any():
+                state_stat = ((state_percents["Cases Last 7 Days"].iat[-1] + state_percents[state_percents["date"] == formatted_one_week]["Cases Last 7 Days"].iat[-1]) / 2) / ((state_percents["Tests Last 7 Days"].iat[-1] + state_percents[state_percents["date"] == formatted_one_week]["Tests Last 7 Days"].iat[-1]) / 2)
+                state_stat = str(np.round(state_stat * 100,2)) + "%"
+            else:
+                formatted_one_week = min(pd.to_datetime(state_percents['date']), key=lambda x: abs(x - pd.to_datetime(one_week_ago))).strftime("%Y-%m-%d")
+                state_stat = ((state_percents["Cases Last 7 Days"].iat[-1] + state_percents[state_percents["date"] == formatted_one_week]["Cases Last 7 Days"].iat[-1]) / 2) / ((state_percents["Tests Last 7 Days"].iat[-1] + state_percents[state_percents["date"] == formatted_one_week]["Tests Last 7 Days"].iat[-1]) / 2)
+                state_stat = str(np.round(state_stat * 100,2)) + "%"
 
         fip_data = master.loc[master['COUNTY'] == county]
-        fip = fip_data["FIPS"].values[0]
-        always_data = master.loc[master['COUNTYFP'] == fip]
-        always = always_data["ALWAYS"].values[0]
-        if always >= 0.8:
-            county_stat = "lower risk of community spread"
-        elif always >=0.5 and always < 0.8:
-            county_stat = "higher risk of community spread"
-        elif always < 0.5:
-            county_stat = "most pronounced community spread"
+        if fip_data.empty:
+            county_stat = "Not enough data"
         else:
-            county_stat = "Invalid Data"
+            fip = fip_data["FIPS"].values[0]
+            always_data = master.loc[master['COUNTYFP'] == fip]
+            always = always_data["ALWAYS"].values[0]
+            if always >= 0.8:
+                county_stat = "lower risk of community spread"
+            elif always >=0.5 and always < 0.8:
+                county_stat = "higher risk of community spread"
+            elif always < 0.5:
+                county_stat = "most pronounced community spread"
+            else:
+                county_stat = "Invalid Data"
 
         weighted_sum = 0
-        activities = [takeout,walk,lib,eatOut,walkTown,BBQ,beach,mall,grandpa,pool,barber,eatIn,plane,buffet,gym,bar]
-        weights = master["weightedRisk"]
-        weights.dropna(inplace=True)
-        weights = weights.values
-        for i in range(0,len(activities)):
-            weighted_sum += activities[i] * weights[i]
-        behaviour = np.round(weighted_sum / np.sum(weights),2)
-        interval_data = master["weightedAvgInteveral"]
-        interval_data.dropna(inplace=True)
-        interval_data = interval_data.values
-        for i in range(0,len(interval_data)):
-            ranges = str(interval_data[i]).strip().split(">")
-            low = float(ranges[0])
-            high = float(ranges[1])
-            if behaviour >= low and behaviour < high:
-                break
-        behaviour_stat = str(master["riskString"].values[i])
+        activities = np.array([takeout,walk,lib,eatOut,walkTown,BBQ,beach,mall,grandpa,pool,barber,eatIn,plane,buffet,gym,bar])
+        if not activities.any():
+            behaviour_stat = "Not enough data"
+        else:
+            weights = master["weightedRisk"]
+            weights.dropna(inplace=True)
+            weights = weights.values
+            for i in range(0,len(activities)):
+                weighted_sum += activities[i] * weights[i]
+            behaviour = np.round(weighted_sum / np.sum(weights),2)
+            interval_data = master["weightedAvgInteveral"]
+            interval_data.dropna(inplace=True)
+            interval_data = interval_data.values
+            for i in range(0,len(interval_data)):
+                ranges = str(interval_data[i]).strip().split(">")
+                low = float(ranges[0])
+                high = float(ranges[1])
+                if behaviour >= low and behaviour < high:
+                    break
+            behaviour_stat = str(master["riskString"].values[i])
 
         race_data = master.loc[master['RACE'] == race]
-        mortality_stat = race_data['mortRateRace'].values[0]
-        infection_stat = race_data['infRateRace'].values[0]
+        if race_data['mortRateRace'].empty:
+            mortality_stat = "Not enough data"
+        else:
+            mortality_stat = race_data['mortRateRace'].values[0]
 
-        age_data = master['age group (years)'].values
-        for i in range(0,len(age_data)):
-            if ">" in str(age_data[i]):
-                num = age_data[i].strip().split(">")
-                fnum = int(num[0])
-                snum = int(num[1])
-                if(age >= fnum and age < snum):
-                    break
-            else:
-                num = int(age_data[i].strip())
-                if age > num:
-                    break
-        age_stat = master['mortality rate'].values[i]
+        if race_data['infRateRace'].empty:
+            infection_stat = "Not enough data"
+        else:
+            infection_stat = race_data['infRateRace'].values[0]
+
+        age_data = master['age group (years)']
+        if age is None:
+            age_stat = "Not enough data"
+        else:
+            for i in range(0,len(age_data.values)):
+                if ">" in str(age_data[i]):
+                    num = age_data[i].strip().split(">")
+                    fnum = int(num[0])
+                    snum = int(num[1])
+                    if(age >= fnum and age < snum):
+                        break
+                else:
+                    num = int(age_data[i].strip())
+                    if age > num:
+                        break
+            age_stat = master['mortality rate'].values[i]
 
         sex_data = master.loc[master['sex'] == sex]
-        sex_stat = sex_data["mortRateSex"].values[0]
+        if sex_data.empty:
+            sex_stat = "Not enough data"
+        else:
+            sex_stat = sex_data["mortRateSex"].values[0]
 
-        med_data = master[master['prexistingCond'].isin(med)]
-        med_stat = med_data[['prexistingCond','mortRatePC']]
-        med_stat.columns = ['Comorbidity', 'Mortality Risk Note Associated']
+        if med is None:
+            med_stat = pd.DataFrame(columns = ['Comorbidity', 'Mortality Risk Note Associated'])
+        else:    
+            med_data = master[master['prexistingCond'].isin(med)]
+            med_stat = med_data[['prexistingCond','mortRatePC']]
+            med_stat.columns = ['Comorbidity', 'Mortality Risk Note Associated']
 
         return([state_stat,
                 county_stat,

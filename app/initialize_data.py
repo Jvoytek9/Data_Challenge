@@ -24,7 +24,7 @@ def convert_to_dataframe(url,ID):
 #retrieving the vaccination data first, so the date last stored can be compared to the new dates retrieved lower in code.
 dv = convert_to_dataframe("https://covid.cdc.gov/covid-data-tracker/COVIDData/getAjaxData?id=vaccination_data","vaccination_data")
 
-#dv.to_csv(basedir+"/sample.csv",index=False)
+#dv.to_csv(basedir+"/data/before.csv",index=False)
 
 #everything below is not used
 dv.drop(["ShortName","Census2019", "date_type", "Administered_Dose1_Recip_18Plus", "Administered_Dose1_Recip_18PlusPop_Pct", 
@@ -34,14 +34,15 @@ dv.drop(["ShortName","Census2019", "date_type", "Administered_Dose1_Recip_18Plus
 "Series_Complete_Pfizer_65Plus",	"Series_Complete_Janssen_65Plus",	"Series_Complete_Unk_Manuf_65Plus",	"Series_Complete_Yes", 
 "Series_Complete_Pop_Pct",	"Series_Complete_18Plus", "Series_Complete_18PlusPop_Pct", "Series_Complete_65Plus", "Series_Complete_65PlusPop_Pct", 
 "Administered_Fed_LTC",	"Administered_Fed_LTC_Dose1",	"Administered_Fed_LTC_Dose2",	"Series_Complete_FedLTC",
-"Distributed_Per_100k_65Plus"],axis=1,inplace=True)
+"Distributed_Per_100k_65Plus","Administered_Dose1_Recip_65Plus"],axis=1,inplace=True)
 
+#dv.to_csv(basedir+"/data/after.csv",index=False)
 
 #everything below is used. Same pattern is found in following datasets.
 dv.columns = ["date","abbr","State/Territory/Federal Entity","Doses Distributed","Doses Administered",
 "Distributed per 100K","Administered per 100K", "Administered Moderna", "Administered Pfizer", "Administered J&J",
 "Administered Dose 1", "Administered Dose 1 Pop. Percent",	"Administered Dose 2 Pop. Percent", 
-"Administered Dose 1 Age 65+", "Administered Dose 1 Age 65+ Pop. Percent", "Administered 65+", "Administered 65+ per 100k", "Administered Dose 2", 
+"Administered Dose 1 Age 65+ Pop. Percent", "Administered 65+", "Administered 65+ per 100k", "Administered Dose 2", 
 "Distributed Moderna", "Distributed Pfizer", "Distributed J&J"]
 
 #below shifts around the order, placing administered dose 2 in spot 13, so it lines up better in the graph dropdowns
@@ -78,22 +79,36 @@ else: #assuming all was good and sql database connected
       "Total Deaths","Confirmed Deaths","Probable Deaths","Death Rate per 100K","Case Rate per 100K",
       "fips","State/Territory"]
 
+      newstuff = pd.read_csv('https://data.cdc.gov/api/views/9mfq-cb36/rows.csv?accessType=DOWNLOAD&bom=true&format=true')
+      newstuff['submission_date'] = pd.to_datetime(newstuff['submission_date'])
+
+      newstuff = newstuff[~newstuff.state.str.contains("NYC")]
+      newstuff['state'].replace(['PW'], "RP", regex=True, inplace=True)
+      newstuff['state'].replace(['RMI'], "MH", regex=True, inplace=True)
+      newstuff.replace([','], "", regex=True, inplace=True)
+
+      newstuff.sort_values(['submission_date', 'state'], ascending=(True, True),inplace=True)
+      
+      newstuff['submission_date'] = newstuff['submission_date'].dt.strftime('%Y-%m-%d')
+
+      newstuff = newstuff[newstuff["submission_date"] == newstuff.submission_date.values[-1]]
+      newstuff.reset_index(inplace=True,drop=True)
+
+      newstuff = newstuff[["state", "new_case", "new_death"]]
+      newstuff = newstuff.convert_dtypes()
+      newstuff.columns = ["abbr","New Cases","New Deaths"]
+
+      cases_and_deaths = pd.merge(cases_and_deaths, newstuff, left_on='abbr', right_on='abbr', how='left')
+
       cases_and_deaths.drop(['abbr','fips'],axis=1,inplace=True)
 
       #moving state info, for efficient merging later on
       cases_and_deaths.insert(0, "State/Territory", cases_and_deaths.pop("State/Territory"))
+      cases_and_deaths.insert(4, "New Cases", cases_and_deaths.pop("New Cases"))
+      cases_and_deaths.insert(12, "New Deaths", cases_and_deaths.pop("New Deaths"))
 
       #Gathering the test data together. Also provides percent positives for risk calc.
-      #Not used, but populated
-      #total_positive_test_results_reported, total_positive_test_results_reported_7_day_count_change, total_positive_test_results_reported_30_day_count_change
       tests = convert_to_dataframe("https://covid.cdc.gov/covid-data-tracker/COVIDData/getAjaxData?id=US_MAP_TESTING",'US_MAP_TESTING')
-      
-      percent_positives = tests[["date","name","total_positive_test_results_reported", "total_positive_test_results_reported_7_day_count_change", 
-      "total_positive_test_results_reported_30_day_count_change","percent_positive_7_day_range","percent_positive_30_day_range","percent_positive_total_range"]].copy()
-      
-      percent_positives.columns = ["date","State/Territory/Federal Entity","total_positive_test_results_reported", 
-      "total_positive_test_results_reported_7_day_count_change", "total_positive_test_results_reported_30_day_count_change",
-      "Percent Positive 7 Days","Percent Positive 30 Days","Percent Positive All time"]
 
       tests.drop(["id","percent_positive_7_day","percent_positive_30_day","percent_positive_total","total_positive_test_results_reported",
       'percent_positive_7_day', 'percent_positive_30_day','percent_positive_total', 'total_positive_test_results_reported','total_positive_test_results_reported_7_day_count_change', 
@@ -109,37 +124,37 @@ else: #assuming all was good and sql database connected
       dv.drop(['State','State/Territory'], axis=1, inplace=True)
 
       #moving the location of fips in the master dataset, to allow for easy filtering later
-      dv.insert(1, "fips", dv.pop("fips"))
+      dv.insert(1, "fips", dv.pop("fips"))  
+      
       dv = dv.replace({'null': None})
+      
+      dv.to_csv(basedir+"/data/newstuff.csv",index=False)
 
       # Convert master dataframe to sql table called compiled_data.
       dv.to_sql('compiled_data', engine, index=False, if_exists='append')
-      percent_positives.to_sql('percent_positives', engine, index=False, if_exists='replace')
-
       print("SQL Databases Updated.")
 
   # table will be returned as a dataframe. This is the master dataset from sql.
-  dv = pd.read_sql_table('compiled_data', engine)
-  percent_positives = pd.read_sql_table('percent_positives', engine)
+  dv = pd.read_sql('compiled_data', engine)
   dv[dv.columns[4:]] = dv[dv.columns[4:]].apply(pd.to_numeric)
-  
+
   # converts date to correct format, for homogeneity
   dv['date'] = pd.to_datetime(dv['date'])
   dv['date'] = dv['date'].dt.strftime('%Y-%m-%d')
 
   # finding the days elapsed and making a new column, so this data can be plotted. Basically our time axis
-  dv['Days Elapsed'] = (pd.Timestamp.now().normalize() - pd.to_datetime(dv['date'])) / np.timedelta64(1, 'D')
-  dv['Days Elapsed'] /= 1
-  dv['Days Elapsed'] = dv['Days Elapsed'].values[::-1]
+  dv['Weeks Elapsed'] = (pd.Timestamp.now().normalize() - pd.to_datetime(dv['date'])) / np.timedelta64(1, 'D')
+  dv['Weeks Elapsed'] /= 7
+  dv['Weeks Elapsed'] = dv['Weeks Elapsed'].values[::-1]
 
-  # below will be used to implement a ranged slider, so users can select dates of interest from new time column found above
-  # max_time = dv['timeWeeks'].iat[0]
-  # max_time = math.ceil(max_time)
-  # interval = int(math.ceil(max_time/10))
+  #below will be used to implement a ranged slider, so users can select dates of interest from new time column found above
+  max_time = dv['Weeks Elapsed'].iat[-1]
+  max_time = math.ceil(max_time)
+  interval = int(math.ceil(max_time/10))
 
-  # intervals = [0]
-  # for i in range(1,interval+1):
-  #     intervals.append(i*10)
+  intervals = []
+  for i in range(0,interval+1):
+      intervals.append(i*10)
 
   #assigning a unique color to each state, so the color is constant at all times
   dv['Color'] = "any"
@@ -152,6 +167,6 @@ else: #assuming all was good and sql database connected
   #print(dv[dv["State/Territory/Federal Entity"] == "Alaska"]) #check for colors you do not like
   
   def Return_Data():
-      return([dv,percent_positives])
+      return(dv)
 
   connection.close()
