@@ -23,6 +23,9 @@ Graph_Height = 605
 
 graphs_html = dbc.Row([
     dbc.Col([
+        html.Div([html.H1("Kassandra Database")],
+            style={'text-align':"center", "margin-right":"auto","margin-left":"auto", 'color':"white","width": "80%","padding-top":"20%"}),
+
         html.Div([
             html.Div([html.H1("Graph 2")],style={'text-align':"center", "margin-left":"auto","margin-right":"auto", 'color':"white"}),
             dbc.Row([
@@ -39,17 +42,17 @@ graphs_html = dbc.Row([
                 style={"width":"90%","border":"1px solid white"}),
             ],style={"background-color":"white","border-radius":"3px","border":"1px solid #cccccc","margin-left": "auto", "margin-right": "auto", "width": "80%","height":"10%"},no_gutters=True),
 
-            dbc.Row([
-                dcc.RadioItems(
-                    id='toggle2',
-                    options=[{'label': i, 'value': i} for i in ['Show Less','Show More']],
-                    value='Show Less',
-                    labelStyle={"padding-right":"10px","margin":"auto"},
-                    style={"text-align":"center","margin":"auto"}
-                ),
-            ],style={'text-align':"center","margin-left": "auto", "margin-right": "auto"}),
-
             html.Div([
+                dbc.Row([
+                    dcc.RadioItems(
+                        id='toggle2',
+                        options=[{'label': i, 'value': i} for i in ['Show Less','Show More']],
+                        value='Show Less',
+                        labelStyle={"padding-right":"10px","margin":"auto"},
+                        style={"text-align":"center","margin":"auto"}
+                    ),
+                ],style={'text-align':"center","margin-left": "auto", "margin-right": "auto"}),
+
                 html.Div(id='controls-container2', children=[
 
                 html.Hr(),
@@ -156,12 +159,7 @@ graphs_html = dbc.Row([
 
                 ],style={"display":"none"}),
             ],style={"text-align":"center", "margin-left": "auto", "margin-right": "auto", "width": "80%", "backgroundColor": 'white', "border-radius":3,"position":"relative"}),
-
-
         ],id="compare_dropdown",style={"display":"None"}),
-
-        html.Div([html.H1("Kassandra Database")],
-            style={'text-align':"center", "margin-right":"auto","margin-left":"auto", 'color':"white","width": "80%","padding-top":"15%"}),
 
         html.Div([
             html.Div(
@@ -179,7 +177,6 @@ graphs_html = dbc.Row([
                 options=[{'label': i.title(), 'value': i} for i in dv.columns[4:-1]], clearable=False),
                 style={"width":"90%","border":"1px solid white"}),
             ],style={"background-color":"white","border-radius":"3px","border":"1px solid #cccccc","margin-left": "auto", "margin-right": "auto", "width": "80%","height":"10%"},no_gutters=True),
-
 
             dbc.Row([
                 dbc.Col(html.H6("Y: "),style={"margin":"auto","width":"10%","height":"100%"}),
@@ -305,18 +302,16 @@ graphs_html = dbc.Row([
 
                 ],style={"display":"none"}),
             ],style={"text-align":"center", "margin-left": "auto", "margin-right": "auto", "width": "80%", "backgroundColor": 'white', "border-radius":3,"position":"relative"}),
-
         ],style={'text-align':"center","margin-left": "auto", "margin-right": "auto", "width": "100%"}),
 
         dcc.Link('Calculator', href='/',style={'position':'absolute','top':0, 'left':0,"padding":5,"color":"white","font-size":18})
-
-    ],style={'backgroundColor': '#9E1B34','width':'20%'}),
+    ],style={'backgroundColor': '#9E1B34'}),
 
     dbc.Col([
         dcc.Tabs(id="tabs", children=[
             dcc.Tab(label='2-Dimensions', children=[
                 dbc.Row([
-                    dbc.Col(
+                    dbc.Col([
                         html.Div([
                             dcc.Graph(id="comp1_2D_graph",
                             config = {'toImageButtonOptions':
@@ -325,10 +320,34 @@ graphs_html = dbc.Row([
                             'format': 'png',
                             'filename': '2D_Plot_Comp1'}
                             })
-                        ])
-                    ,style={"width":"50%"}),
+                        ]),
 
-                    dbc.Col(
+                        html.Div(
+                            dt.DataTable(
+                                id='comp1_2D_table',
+                                page_current=0,
+                                page_size=75,
+                                export_format='xlsx',
+                                style_data_conditional=[
+                                {
+                                'if': {'row_index': 'odd'},
+                                'backgroundColor': 'rgb(248, 248, 248)'
+                                }
+                                ],
+                                style_header={'backgroundColor': 'rgb(230, 230, 230)','fontWeight': 'bold'},
+                                style_table={"height":"20vh","min-height":"20vh"},
+                                fixed_rows={'headers': True},
+                                style_cell={
+                                    'height': 'auto',
+                                    'minWidth': 'auto', 'width': 'auto', 'maxWidth': 'auto',
+                                    'whiteSpace': 'normal'
+                                },
+                                css=[{'selector': '.row', 'rule': 'margin: 0'}]
+                            )
+                        ,style={"width":"95%","margin":"auto"})
+                    ]),
+
+                    dbc.Col([
                         html.Div([
                             dcc.Graph(id="comp2_2D_graph",
                                 config = {'toImageButtonOptions':
@@ -336,61 +355,35 @@ graphs_html = dbc.Row([
                                 'height': None,
                                 'format': 'png',
                                 'filename': '2D_Plot_Comp2'}
-                                })
-                            ])
-                    ,id="compare_graph_2D",style={"display":"None","width":"50%"})
+                            })
+                        ]),
+
+                        html.Div(
+                            dt.DataTable(
+                                id='comp2_2D_table',
+                                page_current=0,
+                                page_size=75,
+                                columns=[{'id': c, 'name': c} for c in dv.columns[1:-1]],
+                                export_format='xlsx',
+                                style_data_conditional=[
+                                {
+                                    'if': {'row_index': 'odd'},
+                                    'backgroundColor': 'rgb(248, 248, 248)'
+                                    }
+                                ],
+                                style_header={'backgroundColor': 'rgb(230, 230, 230)','fontWeight': 'bold'},
+                                style_table={"height":"20vh","min-height":"20vh"},
+                                fixed_rows={'headers': True},
+                                style_cell={
+                                    'height': 'auto',
+                                    'minWidth': 'auto', 'width': 'auto', 'maxWidth': 'auto',
+                                    'whiteSpace': 'normal'
+                                },
+                                css=[{'selector': '.row', 'rule': 'margin: 0'}]
+                            )
+                        ,style={"width":"95%","margin":"auto"})
+                    ],id="compare_graph_table_2D",style={"display":"None"})
                 ],no_gutters=True),
-
-                dbc.Row([
-                    dbc.Col(
-                        dt.DataTable(
-                            id='comp1_2D_table',
-                            page_current=0,
-                            page_size=75,
-                            export_format='xlsx',
-                            style_data_conditional=[
-                            {
-                            'if': {'row_index': 'odd'},
-                            'backgroundColor': 'rgb(248, 248, 248)'
-                            }
-                            ],
-                            style_header={'backgroundColor': 'rgb(230, 230, 230)','fontWeight': 'bold'},
-                            style_table={"height":"20vh","min-height":"20vh"},
-                            fixed_rows={'headers': True},
-                            style_cell={
-                                'height': 'auto',
-                                'minWidth': 'auto', 'width': 'auto', 'maxWidth': 'auto',
-                                'whiteSpace': 'normal'
-                            },
-                            css=[{'selector': '.row', 'rule': 'margin: 0'}]
-                        ),style={"padding-left":20,"padding-right":20,"width":"50%"}
-                    ),
-
-                    dbc.Col(
-                        dt.DataTable(
-                            id='comp2_2D_table',
-                            page_current=0,
-                            page_size=75,
-                            columns=[{'id': c, 'name': c} for c in dv.columns[1:-1]],
-                            export_format='xlsx',
-                            style_data_conditional=[
-                            {
-                                'if': {'row_index': 'odd'},
-                                'backgroundColor': 'rgb(248, 248, 248)'
-                                }
-                            ],
-                            style_header={'backgroundColor': 'rgb(230, 230, 230)','fontWeight': 'bold'},
-                            style_table={"height":"20vh","min-height":"20vh"},
-                            fixed_rows={'headers': True},
-                            style_cell={
-                                'height': 'auto',
-                                'minWidth': 'auto', 'width': 'auto', 'maxWidth': 'auto',
-                                'whiteSpace': 'normal'
-                            },
-                            css=[{'selector': '.row', 'rule': 'margin: 0'}]
-                        )
-                    ,style={"display":"None","width":"50%"},id="compare_table_2D")
-                ],no_gutters=True)
             ]),
 
             dcc.Tab(label='Table', children=[
@@ -485,19 +478,16 @@ def register_graphs_callbacks(app):
 
     @app.callback(
         [Output('compare_dropdown', 'style'),
-        Output('compare_graph_2D', 'style'),
-        Output('compare_table_2D', 'style'),
+        Output('compare_graph_table_2D', 'style'),
         Output('toggle2', 'style')],
         [Input('addComp', 'value')])
     def toggle_compare_container(compare_value):
         if compare_value == 'Compare':
-            return [{'display': 'block',"position":"absolute","top":"55%","margin-right":"auto","margin-left":"auto","width":"100%","text-align":"center"},
-                    {'display': 'block'},
+            return [{'display': 'block',"position":"absolute","top":"50%","margin-right":"auto","margin-left":"auto","width":"100%","text-align":"center"},
                     {'display': 'block'},
                     {"text-align":"center","margin":"auto","backgroundColor": 'white', "border-radius":3,"width":"80%"}]
         else:
             return [{'display': 'none'},
-                    {'display': 'none'},
                     {'display': 'none'},
                     {'display': 'none'}]
 
