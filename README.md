@@ -1,7 +1,7 @@
-#What is this
+# What is this
 This was the initial prototype of the Kassandra Dashboard, and iteration 3/3 of the portable dashboard I had been working on since the surfactant dashboard.
 
-#Installation
+# Installation
 If interested in running a local version, clone this repo and make sure to have pip installed.
 
 Then, make a separate virtualenv like so (this example makes a virtual environment named venv at the given path): python -m venv c:\path\to\myenv
